@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>VK Музыка — Микс на двоих</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a shipped VK Музыка build — same header, pills, VK Микс wave, mood tiles — plus two new features
+   IDEA: the fluted VK wave. Blue = you, pink = your friend; Микс на двоих literally merges the two waves
+   PICTURE: an iPhone running the app; every control is live
+   COLOUR: VK Blue #0077FF + logo pink #F45FFF on #0A0A0A (night) or #FFFFFF (day); mood tiles in their own colours
+   TYPE: Onest (stand-in for VK Sans Display), 800 titles / 500 body, captions ≥14px; LAYOUT: notes left, phone centre */
+:root{color-scheme:dark}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:radial-gradient(1100px 700px at 75% 0,#0b2a66 0,transparent 60%),radial-gradient(900px 600px at 0 100%,#4a0f52 0,transparent 60%),#050507;color:#fff;font:16px/1.5 Onest,-apple-system,system-ui,sans-serif;min-height:100vh;overflow-x:clip}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+[role=button]{cursor:pointer}
+button:focus-visible,[role=button]:focus-visible,input:focus-visible{outline:2px solid #4da3ff;outline-offset:2px}
+.li{display:inline-grid;place-items:center;width:24px;height:24px;flex:none}.li svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:2}.li.f svg{fill:currentColor}
+
+/* stage */
+.stage{min-height:100vh;display:flex;align-items:center;justify-content:center;gap:clamp(24px,4vw,64px);padding:24px}
+.notes{max-width:360px;color:rgba(235,235,245,.72)}
+.notes h1{color:#fff;font-size:34px;line-height:1.08;margin:0 0 10px;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+.notes p{margin:0 0 16px}
+.notes h2{color:#fff;font-size:17px;margin:22px 0 10px;font-weight:700}
+.scn{display:grid;gap:8px}
+.scn button{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:10px 14px;min-height:48px;color:#fff;font-weight:600;font-size:15px}
+.scn button:hover{background:rgba(255,255,255,.1)}
+.scn b{width:26px;height:26px;border-radius:50%;background:#0077ff;display:grid;place-items:center;font-size:14px;flex:none}
+.loop{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;line-height:1.4}
+.loop dt{color:#fff;font-weight:700}.loop dd{margin:0}
+.holder{flex:none}
+.phone{width:390px;height:844px;border-radius:58px;padding:12px;background:#1b1b1d;box-shadow:0 0 0 2px #3a3a3e,0 40px 90px rgba(0,0,0,.6);transform-origin:top left}
+body.bare .stage{padding:0;display:block}body.bare .notes{display:none}
+body.bare .phone{width:100vw!important;height:100dvh!important;border-radius:0;padding:0;box-shadow:none;transform:none!important}
+body.bare .screen{border-radius:0}body.bare .island{display:none}body.bare .holder{width:auto!important;height:auto!important}
+@media(max-width:1020px){.notes{display:none}}
+
+/* app tokens */
+.screen{--bg:#0a0a0a;--s1:#161618;--s2:#232326;--line:rgba(255,255,255,.08);--t1:#fff;--t2:rgba(235,235,245,.7);--t3:rgba(235,235,245,.58);--glass:rgba(32,32,35,.88);--chip:rgba(255,255,255,.1);--blue:#0077ff;--pink:#f45fff;--link:#4da3ff;--danger:#ff6161;
+  position:relative;width:100%;height:100%;border-radius:46px;overflow:hidden;overflow:clip;background:var(--bg);color:var(--t1);isolation:isolate}
+.screen.light{--bg:#fff;--s1:#f2f3f5;--s2:#e4e6ea;--line:rgba(0,0,0,.08);--t1:#000;--t2:#5a6572;--t3:#6a7582;--glass:rgba(246,247,248,.92);--chip:rgba(0,0,0,.06);--link:#0070f0;--danger:#d93b3b}
+.screen.tt,.screen.tt *{transition:background-color .35s,color .35s,border-color .35s!important}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:120px;height:34px;background:#000;border-radius:20px;z-index:90}
+.status{position:absolute;top:0;left:0;right:0;height:50px;display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0;font-weight:600;font-size:15px;z-index:85;pointer-events:none;color:var(--t1);transition:color .2s}
+.screen.stw .status{color:#fff}
+.status i{display:inline-block;width:25px;height:12px;border:1.5px solid currentColor;border-radius:4px;position:relative;vertical-align:-1px;margin-left:6px}.status i:after{content:"";position:absolute;inset:1.5px 5px 1.5px 1.5px;background:currentColor;border-radius:2px}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--t1);opacity:.35;z-index:95;pointer-events:none}
+.scroll{scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+
+/* pages */
+.pg{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:var(--bg);transition:transform .38s cubic-bezier(.2,.8,.2,1),filter .38s;padding-bottom:120px}
+.pg.push{transform:translateX(100%);pointer-events:none;visibility:hidden;transition:transform .38s cubic-bezier(.2,.8,.2,1),visibility 0s .38s}
+.pg.under{transform:translateX(-22%);filter:brightness(.7);pointer-events:none}
+.topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:4px;padding:50px 8px 4px;min-height:100px;background:var(--bg)}
+.topbar.clear{background:transparent;color:#fff;transition:background .2s,color .2s}
+.topbar.clear.solid{background:var(--bg);color:var(--t1)}
+.topbar h3{flex:1;margin:0;font-size:17px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar.clear h3{opacity:0;transition:opacity .2s}.topbar.clear.solid h3{opacity:1}
+.ib{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;position:relative;flex:none}
+.ib .dot{position:absolute;top:7px;right:7px;min-width:18px;height:18px;border-radius:9px;background:#ff3347;color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;padding:0 5px;border:2px solid var(--bg)}
+.pad{padding:0 16px}
+
+/* main header */
+.hdr{position:sticky;top:0;z-index:10;padding-top:50px;color:#fff;transition:background .25s,color .25s}
+.hdr.solid{background:var(--bg);color:var(--t1)}
+.hdr-row{display:flex;align-items:center;gap:6px;padding:0 6px 0 16px;height:52px}
+.me{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0077ff,#00c2ff);display:grid;place-items:center;font-weight:700;font-size:14px;color:#fff;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.hdr-row h2{flex:1;margin:0 0 0 8px;font-size:24px;font-weight:800;letter-spacing:-.01em}
+.pills{display:flex;gap:6px;padding:4px 16px 10px;overflow-x:auto}
+.pills button{flex:none;height:38px;padding:0 15px;border-radius:12px;font-size:15px;font-weight:600;background:rgba(255,255,255,.16);color:#fff;transition:background .2s,color .2s}
+.pills button.on{background:#fff;color:#000}
+.hdr.solid .pills button{background:var(--s1);color:var(--t1)}.hdr.solid .pills button.on{background:var(--t1);color:var(--bg)}
+
+/* wave (fluted glass, as on VK Микс) */
+.wave{position:absolute;inset:0;display:flex;overflow:hidden}
+.wave i{flex:1 1 0;height:100%;background-image:var(--wg);background-size:var(--w) 118%;background-position:var(--x) 0;animation:flow 9s ease-in-out infinite;animation-delay:var(--d);box-shadow:inset 2px 0 0 rgba(255,255,255,.17),inset -5px 0 9px rgba(0,0,0,.13)}
+@keyframes flow{50%{background-position:var(--x) 100%}}
+.wave.blue{--wg:radial-gradient(52% 34% at 50% 46%,#eef7ff 0,#7cc0ff 16%,#1f72ff 40%,transparent 70%),radial-gradient(75% 26% at 50% 100%,#ff8df5 0,transparent 75%),linear-gradient(180deg,#0036f0 0,#0a5cff 42%,#2a6cff 78%,#b47cff 100%)}
+.wave.pink{--wg:radial-gradient(52% 34% at 50% 46%,#fff2fd 0,#ffa3f2 16%,#ff3cd2 40%,transparent 70%),radial-gradient(75% 26% at 50% 100%,#79c2ff 0,transparent 75%),linear-gradient(180deg,#ff1fb8 0,#ff48d4 45%,#ff62e0 78%,#9cb8ff 100%)}
+.wave.mix{--wg:radial-gradient(34% 34% at 28% 48%,#e6f3ff 0,#3b8bff 30%,transparent 70%),radial-gradient(34% 34% at 72% 48%,#ffe6fb 0,#ff4fd8 30%,transparent 70%),linear-gradient(90deg,#0040ff 0,#5a3dff 50%,#ff2fc2 100%)}
+
+/* home hero slider */
+.hero{position:relative;height:560px;margin-top:-154px}
+.slides{display:flex;height:100%;overflow-x:auto;scroll-snap-type:x mandatory}
+.slide{position:relative;flex:0 0 100%;height:100%;scroll-snap-align:start;overflow:hidden;color:#fff}
+.slide:before{content:"";position:absolute;inset:0 0 auto;height:190px;background:linear-gradient(rgba(0,0,0,.32),transparent);z-index:1}
+.slide:after{content:"";position:absolute;inset:auto 0 0;height:110px;background:linear-gradient(transparent,var(--bg));z-index:1}
+.slide-c{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:150px 24px 70px;text-align:center}
+.bigplay{width:68px;height:68px;border-radius:50%;background:#fff;color:#000;display:grid;place-items:center;box-shadow:0 8px 30px rgba(0,0,0,.25);margin-bottom:16px}
+.bigplay .li{width:28px;height:28px}
+.slide h3{margin:0;font-size:26px;font-weight:800;letter-spacing:-.01em;text-shadow:0 2px 16px rgba(0,0,0,.25)}
+.slide p{margin:4px 0 14px;font-size:15px;color:rgba(255,255,255,.88)}
+.glass{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:12px;background:rgba(255,255,255,.2);backdrop-filter:blur(10px);font-weight:600;font-size:15px;color:#fff}
+.glass .li{width:18px;height:18px}
+.swipe{position:absolute;bottom:58px;left:0;right:0;z-index:3;display:flex;justify-content:center}
+.swipe button{display:flex;align-items:center;gap:6px;font-size:14px;color:rgba(255,255,255,.85);min-height:44px;padding:0 12px}
+.swipe .li{width:16px;height:16px}
+
+/* blocks */
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin:26px 0 12px}
+.sec-h h4{margin:0;font-size:21px;font-weight:800;letter-spacing:-.01em}
+.sec-h small{display:flex;align-items:center;gap:6px;color:var(--t3);font-size:14px;font-weight:700;letter-spacing:.02em;margin-bottom:2px}
+.sec-h .ib{width:40px;height:40px;background:var(--s1)}.sec-h .ib .li{width:18px;height:18px}
+.vkbadge{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,#0077ff 45%,#f45fff 46%);display:inline-block}
+.promo{position:relative;display:block;width:100%;border-radius:24px;overflow:hidden;background:var(--s1);min-height:176px;margin-top:4px}
+.promo .wv{position:absolute;right:0;top:0;bottom:0;width:124px;-webkit-mask:linear-gradient(90deg,transparent,#000 45%);mask:linear-gradient(90deg,transparent,#000 45%)}
+.promo .pc{position:relative;padding:18px 118px 18px 18px}
+.new{display:inline-block;background:var(--pink);color:#000;font-size:13px;font-weight:800;border-radius:7px;padding:1px 8px;margin-bottom:8px}
+.promo h5{margin:0 0 4px;font-size:20px;font-weight:800;line-height:1.15}
+.promo p{margin:0 0 14px;font-size:14px;color:var(--t2);line-height:1.4}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:12px;background:var(--blue);color:#fff;font-weight:700;font-size:15px}
+.btn .li{width:18px;height:18px}
+.btn.sec{background:var(--s2);color:var(--t1)}
+.btn.w{width:100%}
+.avs{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--t2);margin-top:12px}
+.avs span{display:flex}.avs .av{width:26px;height:26px;font-size:12px;border:2px solid var(--s1);margin-left:-8px}.avs .av:first-child{margin-left:0}
+.av{border-radius:50%;display:inline-grid;place-items:center;font-weight:700;color:#fff;flex:none}
+.moods{display:grid;grid-template-rows:repeat(2,58px);grid-auto-flow:column;grid-auto-columns:176px;gap:10px;overflow-x:auto;margin:0 -16px;padding:0 16px;scroll-snap-type:x proximity}
+.mood{position:relative;overflow:hidden;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:18px;font-weight:700;color:#fff;scroll-snap-align:start}
+.mood:after{content:"";position:absolute;right:-10px;top:-20%;width:90px;height:140%;background:repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 3px,transparent 3px 10px);border-radius:40%;transform:rotate(12deg);opacity:.8}
+.mood .li{width:16px;height:16px;position:relative;z-index:1}.mood span{position:relative;z-index:1}
+.mood.dk{color:#1a1a1a}
+.ask{display:flex;gap:14px;align-items:center;width:100%;border-radius:20px;padding:14px;background:var(--s1)}
+.ask .orbit{width:56px;height:56px;border-radius:16px;overflow:hidden;position:relative;flex:none}
+.ask b{display:block;font-size:17px}.ask small{display:block;color:var(--t2);font-size:14px;line-height:1.35;margin-top:2px}
+.ask .li{color:var(--t3)}
+.ldd{display:flex;gap:12px;overflow-x:auto;margin:0 -16px;padding:0 16px;scroll-snap-type:x mandatory}
+.ldc{flex:0 0 290px;scroll-snap-align:start;border-radius:20px;padding:16px;min-height:170px;display:flex;flex-direction:column;color:#fff}
+.ldc .pct{font-size:26px;font-weight:800;letter-spacing:-.02em}.ldc .pct small{font-size:14px;font-weight:500;color:rgba(255,255,255,.75)}
+.ldc h6{margin:auto 0 4px;font-size:20px;font-weight:700}
+.ldc .own{display:flex;align-items:center;gap:8px;font-size:14px;color:rgba(255,255,255,.8)}
+.ldc .row{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.ldc .pl{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;flex:none}
+.shelf{display:flex;gap:12px;overflow-x:auto;margin:0 -16px;padding:0 16px;scroll-snap-type:x mandatory}
+.card{flex:none;width:140px;scroll-snap-align:start;font-size:15px;font-weight:600;line-height:1.3}
+.card .cv{width:140px;height:140px;border-radius:16px;margin-bottom:8px}
+.card small{display:block;color:var(--t3);font-size:14px;font-weight:500}
+.cv{position:relative;overflow:hidden;display:grid;place-items:center;color:#fff}
+.cv:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.14) 0 2px,transparent 2px 9px);-webkit-mask:radial-gradient(70% 60% at 70% 70%,#000,transparent);mask:radial-gradient(70% 60% at 70% 70%,#000,transparent)}
+.cv .li{position:relative}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{border-radius:16px;background:var(--s1);padding:14px;min-height:92px;display:flex;flex-direction:column;justify-content:space-between}
+.tile .li{color:var(--link)}.tile b{display:block;font-size:16px}.tile small{display:block}.tile small{color:var(--t2);font-size:14px}
+.genre{border-radius:16px;min-height:84px;padding:14px;font-size:17px;font-weight:700;color:#fff;position:relative;overflow:hidden;display:flex;align-items:flex-end}
+.genre span{position:relative}
+
+/* track rows */
+.tr{display:flex;align-items:center;gap:12px;padding:6px 0;min-height:60px}
+.tr .cv{width:48px;height:48px;border-radius:10px;flex:none}
+.tr .tx{flex:1;line-height:1.3;overflow:hidden}
+.tr .tx b{display:block;font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr .tx small{display:block;color:var(--t2);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr.cur .tx b{color:var(--link)}
+.tr .ib{color:var(--t3)}
+.eq{display:inline-flex;gap:2px;align-items:flex-end;height:14px;margin-right:6px}.eq i{width:3px;background:var(--link);border-radius:2px;animation:eq .9s ease-in-out infinite}.eq i:nth-child(2){animation-delay:-.3s}.eq i:nth-child(3){animation-delay:-.6s}
+@keyframes eq{0%,100%{height:4px}50%{height:14px}}
+.who{display:flex;flex:none}.who .av{width:24px;height:24px;font-size:11px;border:2px solid var(--bg)}.who .av+.av{margin-left:-7px}
+.tag{font-size:12px;font-weight:800;color:var(--bg);background:var(--t1);border-radius:6px;padding:2px 6px;flex:none}
+.empty{border:1.5px dashed var(--line);border-radius:18px;padding:18px;text-align:center;color:var(--t2);font-size:15px}
+.empty b{display:block;color:var(--t1);font-size:17px;margin-bottom:4px}
+
+/* playlist page */
+.plh{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 16px 8px}
+.plh .cv{width:200px;height:200px;border-radius:24px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.plh .cv .li{width:56px;height:56px}
+.plh h2{margin:16px 0 2px;font-size:26px;font-weight:800;letter-spacing:-.01em;line-height:1.15}
+.plh p{margin:0;color:var(--t2);font-size:15px}
+.acts{display:flex;justify-content:center;align-items:center;gap:12px;margin:16px 0 8px}
+.rnd{width:48px;height:48px;border-radius:50%;background:var(--s1);display:grid;place-items:center}
+.rnd.on{color:var(--pink)}.rnd.on .li svg{fill:currentColor}
+.acts .btn{min-width:150px;height:48px;border-radius:24px}
+
+/* blend */
+.bh{position:relative;height:400px;margin-top:-100px;color:#fff;overflow:hidden}
+.bh:after{content:"";position:absolute;inset:auto 0 0;height:160px;background:linear-gradient(transparent,var(--bg));z-index:1}
+.bh .bc{position:absolute;inset:auto 0 18px;z-index:2;text-align:center;padding:0 16px}
+.pair{display:flex;justify-content:center;margin-bottom:10px}.pair .av{width:56px;height:56px;font-size:20px;border:3px solid #fff}.pair .av+.av{margin-left:-14px}
+.bh h2{margin:0;font-size:30px;font-weight:800;letter-spacing:-.02em;color:var(--t1)}
+.match{color:var(--t2);font-size:15px}.match b{color:var(--t1);font-size:17px}
+.common{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:12px 0 0}
+.common span{background:var(--chip);border-radius:999px;padding:4px 12px;font-size:14px}
+.meta{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;color:var(--t2);font-size:14px;margin:4px 0 6px}
+.meta span{display:flex;align-items:center;gap:5px}.meta .li{width:16px;height:16px}
+.optin{background:var(--s1);border-radius:18px;padding:14px;margin:14px 0 4px}
+.optin b{display:block;font-size:16px}.optin p{margin:2px 0 12px;color:var(--t2);font-size:14px;line-height:1.4}
+.optin .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--s1);border-radius:14px;padding:3px;margin:18px 0 6px;position:relative}
+.seg button{height:44px;border-radius:11px;font-size:14px;font-weight:600;color:var(--t2);position:relative;z-index:1;text-align:center;white-space:nowrap}
+.seg button.on{color:var(--t1)}
+.seg .knob{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px)/3);border-radius:11px;background:var(--s2);transition:transform .3s}
+.ratio{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:10px 0 4px}.ratio i{transition:flex .35s}.ratio .r1{background:var(--blue)}.ratio .r2{background:var(--pink)}.ratio .r3{background:#8b8b93}
+.legend{display:flex;justify-content:space-between;font-size:14px;color:var(--t3);margin-bottom:6px}
+.danger{display:block;margin:22px auto 0;color:var(--danger);font-weight:600;min-height:44px;padding:0 16px}
+
+/* assistant */
+.agent{display:flex;gap:14px;align-items:center;background:var(--s1);border-radius:20px;padding:14px;margin-bottom:12px}
+.agent .orbit{width:52px;height:52px;border-radius:16px;overflow:hidden;position:relative;flex:none}
+.agent b{display:block;font-size:17px}.agent small{display:block;color:var(--t2);font-size:14px;line-height:1.4}
+.sugg{display:flex;flex-direction:column;gap:8px}
+.sugg button{display:flex;gap:12px;align-items:center;background:var(--s1);border-radius:16px;padding:10px 14px;font-size:15px;min-height:52px;line-height:1.35}
+.sugg button.hot{background:linear-gradient(90deg,rgba(0,119,255,.2),rgba(244,95,255,.2)),var(--s1);font-weight:600}
+.sugg .li{width:20px;height:20px;color:var(--link)}
+.demo{color:var(--t3);font-size:14px;margin:12px 2px 0;line-height:1.4}
+.msgs{display:flex;flex-direction:column;gap:14px}
+.u{align-self:flex-end;max-width:84%;background:var(--blue);color:#fff;border-radius:18px 18px 4px 18px;padding:10px 14px;font-size:15px;line-height:1.4}
+.u.img{padding:4px;background:var(--s1)}.u img{display:block;width:170px;border-radius:14px}
+.who-ai{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:700;margin-bottom:6px}
+.who-ai .orbit{width:24px;height:24px;border-radius:8px;overflow:hidden;position:relative}
+.steps{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.st{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--t2)}
+.st .dt{width:18px;height:18px;border-radius:50%;border:2px solid var(--t3);border-top-color:transparent;animation:spin .8s linear infinite;flex:none;display:grid;place-items:center}
+.st.done .dt{animation:none;border:0;background:var(--blue);color:#fff}.st.done .dt .li{width:12px;height:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.atext{font-size:15px;line-height:1.5;margin:6px 0 10px}
+.res{background:var(--s1);border-radius:16px;padding:10px;display:flex;gap:12px;align-items:center;margin-bottom:8px;width:100%}
+.res .cv{width:52px;height:52px;border-radius:12px;flex:none}
+.res .tx{flex:1;line-height:1.3}.res .tx b{display:block;font-weight:600}.res .tx small{display:block;color:var(--t2);font-size:14px}
+.conf{font-weight:700;color:var(--link)}
+.res .go{width:44px;height:44px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;flex:none}.res .go .li{width:18px;height:18px}
+.scene{border-radius:16px;overflow:hidden;margin-bottom:8px;background:var(--s1)}
+.scene .frame{height:150px;position:relative;display:grid;place-items:center;background:linear-gradient(160deg,#3a2a1c,#7a4a22 55%,#1d1410)}
+.scene .frame:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,220,170,.08) 0 2px,transparent 2px 12px)}
+.scene .frame .li{width:44px;height:44px;color:rgba(255,236,210,.9)}
+.scene .tc{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.6);color:#fff;border-radius:8px;padding:2px 8px;font-size:14px;font-weight:600}
+.scene .tx{padding:10px 12px}.scene .tx b{display:block}.scene .tx small{color:var(--t2);font-size:14px}
+.opts{display:grid;gap:8px;margin:8px 0}
+.opts button{display:flex;gap:12px;align-items:center;background:var(--s1);border-radius:14px;padding:10px 12px;min-height:56px;border:1.5px solid transparent}
+.opts button:hover{border-color:var(--blue)}
+.opts .n{width:30px;height:30px;border-radius:50%;background:var(--s2);display:grid;place-items:center;font-weight:700;flex:none}
+.opts b{display:block;font-size:15px}.opts small{color:var(--t2);font-size:14px}
+.follow{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.follow button{background:var(--chip);border-radius:999px;padding:0 14px;min-height:40px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.follow .li{width:16px;height:16px}
+.pal{display:flex;gap:6px;margin:2px 0 8px}.pal i{width:28px;height:28px;border-radius:8px;border:1px solid var(--line)}
+.vkv{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;border-radius:12px;background:#0077ff;color:#fff;font-size:14px;font-weight:700;flex:none}.vkv .li{width:18px;height:18px}
+.vkv.big{display:flex;width:calc(100% - 24px);margin:10px 12px 0;justify-content:center;height:44px}
+.skel{height:72px;border-radius:16px;background:linear-gradient(90deg,var(--s1) 0,var(--s2) 50%,var(--s1) 100%);background-size:200% 100%;animation:sk 1s linear infinite;margin-bottom:8px}
+@keyframes sk{to{background-position:-200% 0}}
+.composer{position:absolute;left:8px;right:8px;bottom:96px;height:56px;border-radius:18px;background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--line);display:none;align-items:center;gap:4px;padding:0 6px;z-index:31}
+.screen.on-ai .composer{display:flex}
+.smode{flex:1;display:grid;grid-template-columns:1fr 1fr;background:var(--s1);border-radius:12px;padding:3px;margin:0 2px}
+.smode button{height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:15px;color:var(--t2)}
+.smode button.on{background:var(--s2);color:var(--t1)}.screen.light .smode button.on{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.smode .li{width:18px;height:18px}.smode #tabA.on .li{color:var(--pink)}
+.sbar-wrap{position:sticky;top:100px;z-index:9;background:var(--bg);padding:2px 16px 8px}
+.sbar{display:flex;align-items:center;gap:8px;height:48px;border-radius:14px;background:var(--s1);padding:0 2px 0 12px;color:var(--t3)}
+.sbar .li{width:20px;height:20px}
+.sbar input{flex:1;background:none;border:0;color:var(--t1);font:16px Onest,sans-serif;outline:none;-webkit-appearance:none}
+.sbar input::placeholder{color:var(--t3)}.sbar input::-webkit-search-cancel-button{display:none}
+.hl{color:var(--link)}
+.askrow{display:flex;gap:12px;align-items:center;width:100%;border-radius:16px;padding:12px;background:linear-gradient(90deg,rgba(0,119,255,.16),rgba(244,95,255,.16)),var(--s1);margin:10px 0;font-size:15px;line-height:1.35}
+.askrow .orbit{width:40px;height:40px;border-radius:12px;overflow:hidden;position:relative;flex:none}
+.askrow small{color:var(--t2);font-size:14px}.askrow>.li{color:var(--pink)}
+.composer input[type=text]{flex:1;background:none;border:0;color:var(--t1);font:16px Onest,sans-serif;outline:none}
+.composer input::placeholder{color:var(--t3)}
+.composer .ib{width:44px;height:44px}.composer .send{background:var(--blue);color:#fff}
+
+/* notifications & settings */
+.nt{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line);width:100%}
+.nt .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;color:#fff}
+.nt .tx{flex:1;line-height:1.35}.nt .tx b{display:block;font-weight:600}.nt .tx small{color:var(--t2);font-size:14px}
+.nt .un{width:10px;height:10px;border-radius:50%;background:var(--blue);margin-top:8px;flex:none}
+.grp{margin:22px 0 8px;font-size:14px;font-weight:700;color:var(--t3)}
+.themes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.th{border-radius:16px;background:var(--s1);padding:8px 8px 10px;border:2px solid transparent;text-align:center;font-size:14px;font-weight:600}
+.th.on{border-color:var(--blue)}
+.th .pv{height:96px;border-radius:10px;overflow:hidden;position:relative;margin-bottom:8px;display:flex}
+.th .pv span{flex:1;position:relative}
+.th .pv span:before{content:"";position:absolute;left:8px;right:8px;top:8px;height:30px;border-radius:6px;background:linear-gradient(135deg,#0077ff,#f45fff)}
+.th .pv span:after{content:"";position:absolute;left:8px;right:22px;top:46px;height:8px;border-radius:4px;background:currentColor;opacity:.35;box-shadow:0 14px 0 currentColor}
+.pv .d{background:#0a0a0a;color:#fff}.pv .l{background:#fff;color:#000}
+.waves{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wv-opt{position:relative;height:76px;border-radius:14px;overflow:hidden;border:2px solid transparent;color:#fff;font-weight:700}
+.wv-opt.on{border-color:var(--t1)}
+.wv-opt span{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;text-shadow:0 1px 8px rgba(0,0,0,.35);line-height:1.2}.wv-opt small{font-weight:500;font-size:13px}
+.row{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 0;border-bottom:1px solid var(--line);width:100%}
+.row .tx{flex:1;line-height:1.35}.row .tx small{display:block;color:var(--t2);font-size:14px}
+.sw{width:52px;height:32px;border-radius:16px;background:var(--s2);position:relative;flex:none;transition:background .2s}
+.sw:after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.sw[aria-checked=true]{background:#2bb24c}.sw[aria-checked=true]:after{transform:translateX(20px)}
+
+/* mini player */
+.mini{position:absolute;left:8px;right:8px;bottom:26px;height:62px;border-radius:18px;background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 6px 0 8px;z-index:30;cursor:pointer}
+.mini .cv{width:44px;height:44px;border-radius:10px;flex:none}
+.mini .tx{flex:1;font-size:15px;font-weight:600;line-height:1.25;overflow:hidden;white-space:nowrap}.mini .tx small{display:block;color:var(--t2);font-weight:400;font-size:14px;overflow:hidden;text-overflow:ellipsis}
+.mini .tx b{display:block;overflow:hidden;text-overflow:ellipsis}
+.mini .bar{position:absolute;left:16px;right:16px;bottom:0;height:2px;background:var(--line);border-radius:2px;overflow:hidden}.mini .bar b{display:block;height:100%;background:var(--t1);width:0}
+
+/* sheets, dialog, toast */
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .3s;z-index:60}
+.dim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:26px 26px 0 0;padding:8px 16px 38px;z-index:65;transform:translateY(105%);transition:transform .38s cubic-bezier(.2,.8,.2,1);max-height:84%;overflow-y:auto;box-shadow:0 -10px 40px rgba(0,0,0,.3)}
+.screen:not(.light) .sheet{background:#1a1a1c}
+.sheet.on{transform:none}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--t3);opacity:.5;margin:0 auto 12px}
+.sheet h3{margin:0 0 4px;font-size:22px;font-weight:800}.sheet>p{margin:0 0 14px;color:var(--t2);font-size:15px}
+.search{display:flex;align-items:center;gap:8px;background:var(--s1);border-radius:12px;padding:0 12px;height:44px;margin-bottom:6px;color:var(--t3)}
+.search input{flex:1;background:none;border:0;color:var(--t1);font:16px Onest,sans-serif;outline:none}
+.fr{display:flex;align-items:center;gap:12px;width:100%;padding:9px 0;border-bottom:1px solid var(--line)}
+.fr .av{width:46px;height:46px;font-size:17px}.fr .tx{flex:1;line-height:1.3}.fr .tx b{font-weight:600}.fr .tx small{display:block;color:var(--t2);font-size:14px}
+.fr .pct{font-size:14px;font-weight:700;color:var(--t1);background:var(--s1);border-radius:8px;padding:3px 8px;white-space:nowrap}
+.act{display:flex;align-items:center;gap:14px;width:100%;min-height:52px;font-size:16px;border-bottom:1px solid var(--line)}
+.act .li{color:var(--t2)}.act.red{color:var(--danger)}.act.red .li{color:var(--danger)}
+.sheet .th1{display:flex;gap:12px;align-items:center;margin-bottom:8px}.sheet .th1 .cv{width:52px;height:52px;border-radius:12px}
+.chipset{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
+.chipset button{height:40px;padding:0 14px;border-radius:12px;background:var(--s1);font-size:15px;font-weight:600;border:1.5px solid transparent}
+.chipset button.on{background:rgba(0,119,255,.16);border-color:var(--blue);color:var(--link)}
+.msgp{background:var(--s1);border-radius:16px;padding:12px;display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.msgp .cvw{width:56px;height:56px;border-radius:14px;overflow:hidden;position:relative;flex:none}.msgp b{display:block}.msgp small{color:var(--t2);font-size:14px}
+.dialog{position:absolute;left:28px;right:28px;top:50%;transform:translateY(-40%) scale(.96);opacity:0;pointer-events:none;background:var(--bg);border-radius:22px;padding:20px;z-index:70;transition:.25s;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.screen:not(.light) .dialog{background:#1f1f22}
+.dialog.on{opacity:1;pointer-events:auto;transform:translateY(-50%)}
+.dialog h3{margin:0 0 6px;font-size:19px}.dialog p{margin:0 0 16px;color:var(--t2);font-size:15px;line-height:1.45}
+.dialog .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dialog .btn.red{background:var(--danger)}
+.toast{position:absolute;left:16px;right:16px;bottom:100px;background:var(--t1);color:var(--bg);border-radius:14px;padding:12px 14px;font-size:15px;font-weight:600;z-index:80;transform:translateY(16px);opacity:0;transition:.3s;pointer-events:none}
+.toast.on{transform:none;opacity:1}
+
+/* merge */
+.merge{position:absolute;inset:0;background:#000;color:#fff;z-index:75;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s}
+.merge.on{opacity:1;pointer-events:auto}
+.mst{position:relative;width:300px;height:300px}
+.mst .m{position:absolute;top:30px;width:150px;height:240px;border-radius:36px;overflow:hidden}
+.mst .m1{left:0}.mst .m2{right:0;mix-blend-mode:screen}.mst .m3{left:45px;width:210px;opacity:0}
+.merge.go .m1{animation:ml 2.3s cubic-bezier(.5,0,.3,1) forwards}
+.merge.go .m2{animation:mr 2.3s cubic-bezier(.5,0,.3,1) forwards}
+.merge.go .m3{animation:mp 2.8s forwards}
+@keyframes ml{75%{transform:translateX(75px)}100%{transform:translateX(75px) scale(.6);opacity:0}}
+@keyframes mr{75%{transform:translateX(-75px)}100%{transform:translateX(-75px) scale(.6);opacity:0}}
+@keyframes mp{0%,70%{opacity:0;transform:scale(.6)}100%{opacity:1;transform:scale(1)}}
+.merge .n{font-size:54px;font-weight:800;letter-spacing:-.03em}.merge .s{color:rgba(255,255,255,.7);min-height:24px}
+
+/* player */
+.player{position:absolute;inset:0;z-index:55;padding:54px 22px 34px;display:flex;flex-direction:column;color:#fff;transform:translateY(100%);transition:transform .42s cubic-bezier(.2,.8,.2,1),background .5s}
+.player.on{transform:none}
+.player .hd{display:flex;align-items:center;justify-content:space-between;text-align:center;font-size:14px;color:rgba(255,255,255,.75)}
+.player .hd b{display:block;color:#fff;font-size:15px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.player .art{width:100%;aspect-ratio:1;border-radius:24px;margin:22px 0 22px;box-shadow:0 30px 60px rgba(0,0,0,.4)}
+.player .art .li{width:72px;height:72px}
+.ptl{display:flex;align-items:center;gap:8px}.ptl .tx{flex:1;overflow:hidden}
+.player h3{margin:0;font-size:24px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.player .ar{color:rgba(255,255,255,.75)}
+.player .rnd{background:rgba(255,255,255,.14)}
+.why{display:flex;gap:8px;align-items:center;margin-top:10px;background:rgba(0,0,0,.25);border-radius:12px;padding:8px 12px;font-size:14px}
+.prog{height:22px;display:flex;align-items:center;margin:14px 0 0;cursor:pointer}
+.prog span{display:block;width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.28)}.prog b{display:block;height:100%;width:0;background:#fff;border-radius:2px}
+.times{display:flex;justify-content:space-between;font-size:14px;color:rgba(255,255,255,.65)}
+.ctrl{display:flex;justify-content:space-between;align-items:center;margin-top:auto}
+.ctrl .pp{width:76px;height:76px;border-radius:50%;background:#fff;color:#000;display:grid;place-items:center}.ctrl .pp .li{width:30px;height:30px}
+.ctrl .sk{width:56px;height:56px;display:grid;place-items:center}.ctrl .sk .li{width:30px;height:30px}
+.ctrl .sm{width:44px;height:44px;display:grid;place-items:center;color:rgba(255,255,255,.6);position:relative}.ctrl .sm.on{color:#fff}.ctrl .sm.on:after{content:"";position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:#fff}
+.pbot{display:flex;justify-content:space-between;margin-top:18px}
+.pbot button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;color:rgba(255,255,255,.8);min-width:72px;min-height:44px}
+@media(prefers-reduced-motion:reduce){.wave i,.eq i{animation:none!important}.pg,.sheet,.player{transition:none}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <aside class="notes">
+    <h1>VK Музыка: Микс на двоих и музыкальный ассистент</h1>
+    <p>Прототип в стилистике приложения. Работает каждая кнопка. Поиск и ассистент — две вкладки одного экрана, тема меняется иконкой в шапке.</p>
+    <h2>Пройдите сценарии</h2>
+    <div class="scn">
+      <button data-act="demo:blend"><b>1</b>Микс на двоих с другом</button>
+      <button data-act="demo:search"><b>2</b>Обычный поиск: «Земфира»</button>
+      <button data-act="demo:kitchen"><b>3</b>Мелодия из «Кухни» через ассистента</button>
+      <button data-act="demo:theme"><b>4</b>Дневная, ночная, системная тема</button>
+      <button data-act="demo:reset"><b>↺</b>Начать сначала</button>
+    </div>
+    <h2>Почему люди будут возвращаться</h2>
+    <dl class="loop">
+      <dt>Триггер</dt><dd>«Ваш микс с Аней обновился», приглашение от друга, вопрос «что это за песня?»</dd>
+      <dt>Действие</dt><dd>Один тап: «Слушать» или вопрос ассистенту обычными словами</dd>
+      <dt>Награда</dt><dd>Каждый день новые треки, совпадение вкусов с другом, найденная песня</dd>
+      <dt>Вклад</dt><dd>Баланс микса, лайки, приглашённые друзья, сохранённые находки</dd>
+    </dl>
+  </aside>
+  <div class="holder" id="holder"><div class="phone" id="phone">
+  <div class="screen scroll" id="screen">
+    <div class="island"></div>
+    <div class="status"><span>9:41</span><span>5G<i></i></span></div>
+
+    <div class="pg scroll" id="main">
+      <header class="hdr" id="hdr">
+        <div class="hdr-row">
+          <button class="me" data-act="push:settings" aria-label="Профиль и настройки">Я</button>
+          <h2>Музыка</h2>
+          <button class="ib" data-act="search" aria-label="Поиск музыки"><i class="li" data-i="search"></i></button>
+          <button class="ib" data-act="theme-sheet" id="thBtn" aria-label="Оформление: дневная, ночная или системная тема"></button>
+          <button class="ib" data-act="push:notif" aria-label="Уведомления"><i class="li" data-i="bell"></i><span class="dot" id="badge">3</span></button>
+        </div>
+        <nav class="pills scroll" id="pills">
+          <button data-act="tab:home" class="on">Главная</button>
+          <button data-act="tab:my">Моя музыка</button>
+          <button data-act="tab:books">Книги и шоу</button>
+          <button data-act="tab:browse">Обзор</button>
+        </nav>
+      </header>
+      <div id="sec"></div>
+    </div>
+
+    <section class="pg scroll push" id="pl"></section>
+    <section class="pg scroll push" id="blend"></section>
+    <section class="pg scroll push" id="ai">
+      <div class="topbar"><button class="ib" data-act="back" aria-label="Назад"><i class="li" data-i="chevron-left"></i></button>
+        <div class="smode" role="tablist" aria-label="Режим поиска"><button role="tab" id="tabS" data-act="smode:search"><i class="li" data-i="search"></i>Поиск</button><button role="tab" id="tabA" data-act="smode:ai"><i class="li" data-i="sparkles"></i>Ассистент</button></div>
+        <button class="ib" id="aiNew" data-act="ai-clear" aria-label="Новый диалог"><i class="li" data-i="plus"></i></button></div>
+      <div id="sWrap">
+        <div class="sbar-wrap"><label class="sbar"><i class="li" data-i="search"></i><input id="sq" type="search" placeholder="Исполнители, треки, плейлисты" enterkeyhint="search" autocomplete="off" aria-label="Поиск по каталогу"><button type="button" class="ib" id="sqx" data-act="sq-clear" aria-label="Очистить"><i class="li" data-i="x"></i></button></label></div>
+        <div class="pad" id="sres"></div>
+      </div>
+      <div id="aWrap" class="pad" style="padding-bottom:110px">
+        <div class="agent"><div class="orbit" id="orb1"></div><div><b>Музыкальный ассистент</b><small>Не помните название? Опишите песню словами, сцену из фильма или пришлите фото</small></div></div>
+        <div id="aiHome">
+          <div class="sugg">
+            <button class="hot" data-act="ask:Сериал «Кухня», 2 сезон, 3 серия: какая мелодия играла, когда разбили посуду?"><i class="li" data-i="utensils-crossed"></i>«Кухня», 2 сезон, 3 серия: какая мелодия играла, когда разбили посуду?</button>
+            <button data-act="ask:Песни из фильма «Брат 2»"><i class="li" data-i="clapperboard"></i>Песни из фильма «Брат 2»</button>
+            <button data-act="ask:Медленная песня Земфиры, где она спрашивает «хочешь?»"><i class="li" data-i="sparkles"></i>Медленная песня Земфиры, где она спрашивает «хочешь?»</button>
+            <button data-act="photo-sample"><i class="li" data-i="image-plus"></i>Подобрать музыку к фото</button>
+          </div>
+          <p class="demo">Демо-версия: ответы ассистента заданы сценарием, тайм-коды и сцены условные. Цвета вашего фото анализируются по-настоящему.</p>
+        </div>
+        <div class="msgs" id="msgs"></div>
+      </div>
+    </section>
+    <section class="pg scroll push" id="notif"></section>
+    <section class="pg scroll push" id="settings"></section>
+
+    <div class="mini" id="mini" data-act="player" role="button" tabindex="0" aria-label="Открыть плеер">
+      <div class="cv" id="miniCv"></div><div class="tx" id="miniTx"></div>
+      <button class="ib" data-act="pp" id="miniPP" aria-label="Пауза"></button>
+      <button class="ib" data-act="next" aria-label="Следующий трек"><i class="li f" data-i="skip-forward"></i></button>
+      <span class="bar"><b id="miniBar"></b></span>
+    </div>
+    <form class="composer" id="composer" autocomplete="off">
+      <button type="button" class="ib" data-act="photo" aria-label="Прикрепить фото"><i class="li" data-i="image-plus"></i></button>
+      <input type="text" id="ask" placeholder="Опишите песню, сцену или фильм" aria-label="Запрос ассистенту">
+      <button class="ib send" aria-label="Отправить"><i class="li" data-i="arrow-up"></i></button>
+      <input type="file" id="file" accept="image/*" hidden>
+    </form>
+
+    <div class="player" id="player">
+      <div class="hd"><button class="ib" data-act="player-close" aria-label="Свернуть"><i class="li" data-i="chevron-down"></i></button><span>Играет из<b id="pFrom"></b></span><button class="ib" data-act="more-cur" aria-label="Действия с треком"><i class="li" data-i="ellipsis"></i></button></div>
+      <div class="art cv" id="pArt"></div>
+      <div class="ptl"><div class="tx"><h3 id="pT"></h3><div class="ar" id="pA"></div></div><button class="rnd" id="pLike" data-act="like-cur" aria-label="Нравится"><i class="li" data-i="heart"></i></button></div>
+      <div class="why" id="pWhy"></div>
+      <div class="prog" id="prog" role="slider" aria-label="Позиция трека"><span><b id="pBar"></b></span></div>
+      <div class="times"><span id="pCur">0:00</span><span id="pDur">0:00</span></div>
+      <div class="ctrl">
+        <button class="sm" id="shuf" data-act="shuffle" aria-label="Перемешать"><i class="li" data-i="shuffle"></i></button>
+        <button class="sk" data-act="prev" aria-label="Предыдущий"><i class="li f" data-i="skip-back"></i></button>
+        <button class="pp" id="pPP" data-act="pp" aria-label="Пауза"></button>
+        <button class="sk" data-act="next" aria-label="Следующий"><i class="li f" data-i="skip-forward"></i></button>
+        <button class="sm" id="rep" data-act="repeat" aria-label="Повтор"><i class="li" data-i="repeat"></i></button>
+      </div>
+      <div class="pbot">
+        <button data-act="queue"><i class="li" data-i="list-music"></i>Очередь</button>
+        <button data-act="where-cur"><i class="li" data-i="clapperboard"></i>Где звучал</button>
+        <button data-act="share-cur"><i class="li" data-i="send"></i>Поделиться</button>
+      </div>
+    </div>
+
+    <div class="merge" id="merge">
+      <div class="mst"><div class="m m1" id="mw1"></div><div class="m m2" id="mw2"></div><div class="m m3" id="mw3"></div></div>
+      <div class="n" id="mNum">0%</div><div class="s" id="mSub"></div>
+    </div>
+    <div class="dim" id="dim" data-act="close"></div>
+    <div class="sheet scroll" id="sheet" role="dialog" aria-modal="true"></div>
+    <div class="dialog" id="dialog" role="alertdialog" aria-modal="true"></div>
+    <div class="toast" id="toast" role="status"></div>
+    <div class="homebar"></div>
+  </div></div></div>
+</div>
+<script>
+{
+const ICONS={"arrow-up": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"m5 12 7-7 7 7\" /> <path d=\"M12 19V5\" /> </svg>", "audio-lines": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M2 10v3\" /> <path d=\"M6 6v11\" /> <path d=\"M10 3v18\" /> <path d=\"M14 8v7\" /> <path d=\"M18 5v13\" /> <path d=\"M22 10v3\" /> </svg>", "bell": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9\" /> <path d=\"M10.3 21a1.94 1.94 0 0 0 3.4 0\" /> </svg>", "book-open": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M12 7v14\" /> <path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\" /> </svg>", "check": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M20 6 9 17l-5-5\" /> </svg>", "chevron-down": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"m6 9 6 6 6-6\" /> </svg>", "chevron-left": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"m15 18-6-6 6-6\" /> </svg>", "chevron-right": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"m9 18 6-6-6-6\" /> </svg>", "clapperboard": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z\" /> <path d=\"m6.2 5.3 3.1 3.9\" /> <path d=\"m12.4 3.4 3.1 4\" /> <path d=\"M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z\" /> </svg>", "download": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /> <polyline points=\"7 10 12 15 17 10\" /> <line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\" /> </svg>", "ellipsis": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <circle cx=\"12\" cy=\"12\" r=\"1\" /> <circle cx=\"19\" cy=\"12\" r=\"1\" /> <circle cx=\"5\" cy=\"12\" r=\"1\" /> </svg>", "heart": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z\" /> </svg>", "image-plus": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M16 5h6\" /> <path d=\"M19 2v6\" /> <path d=\"M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5\" /> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\" /> <circle cx=\"9\" cy=\"9\" r=\"2\" /> </svg>", "link": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\" /> <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\" /> </svg>", "list-music": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M21 15V6\" /> <path d=\"M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z\" /> <path d=\"M12 12H3\" /> <path d=\"M16 6H3\" /> <path d=\"M12 18H3\" /> </svg>", "list-plus": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M11 12H3\" /> <path d=\"M16 6H3\" /> <path d=\"M16 18H3\" /> <path d=\"M18 9v6\" /> <path d=\"M21 12h-6\" /> </svg>", "mic": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z\" /> <path d=\"M19 10v2a7 7 0 0 1-14 0v-2\" /> <line x1=\"12\" x2=\"12\" y1=\"19\" y2=\"22\" /> </svg>", "monitor-smartphone": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h8\" /> <path d=\"M10 19v-3.96 3.15\" /> <path d=\"M7 19h5\" /> <rect width=\"6\" height=\"10\" x=\"16\" y=\"12\" rx=\"2\" /> </svg>", "moon": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\" /> </svg>", "pause": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <rect x=\"14\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\" /> <rect x=\"6\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\" /> </svg>", "play": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <polygon points=\"6 3 20 12 6 21 6 3\" /> </svg>", "plus": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M5 12h14\" /> <path d=\"M12 5v14\" /> </svg>", "repeat": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"m17 2 4 4-4 4\" /> <path d=\"M3 11v-1a4 4 0 0 1 4-4h14\" /> <path d=\"m7 22-4-4 4-4\" /> <path d=\"M21 13v1a4 4 0 0 1-4 4H3\" /> </svg>", "search": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <circle cx=\"11\" cy=\"11\" r=\"8\" /> <path d=\"m21 21-4.3-4.3\" /> </svg>", "send": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z\" /> <path d=\"m21.854 2.147-10.94 10.939\" /> </svg>", "settings": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" /> </svg>", "shuffle": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22\" /> <path d=\"m18 2 4 4-4 4\" /> <path d=\"M2 6h1.9c1.5 0 2.9.9 3.6 2.2\" /> <path d=\"M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8\" /> <path d=\"m18 14 4 4-4 4\" /> </svg>", "skip-back": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <polygon points=\"19 20 9 12 19 4 19 20\" /> <line x1=\"5\" x2=\"5\" y1=\"19\" y2=\"5\" /> </svg>", "skip-forward": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <polygon points=\"5 4 15 12 5 20 5 4\" /> <line x1=\"19\" x2=\"19\" y1=\"5\" y2=\"19\" /> </svg>", "sliders-horizontal": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <line x1=\"21\" x2=\"14\" y1=\"4\" y2=\"4\" /> <line x1=\"10\" x2=\"3\" y1=\"4\" y2=\"4\" /> <line x1=\"21\" x2=\"12\" y1=\"12\" y2=\"12\" /> <line x1=\"8\" x2=\"3\" y1=\"12\" y2=\"12\" /> <line x1=\"21\" x2=\"16\" y1=\"20\" y2=\"20\" /> <line x1=\"12\" x2=\"3\" y1=\"20\" y2=\"20\" /> <line x1=\"14\" x2=\"14\" y1=\"2\" y2=\"6\" /> <line x1=\"8\" x2=\"8\" y1=\"10\" y2=\"14\" /> <line x1=\"16\" x2=\"16\" y1=\"18\" y2=\"22\" /> </svg>", "sparkles": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\" /> <path d=\"M20 3v4\" /> <path d=\"M22 5h-4\" /> <path d=\"M4 17v2\" /> <path d=\"M5 18H3\" /> </svg>", "sun": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" /> </svg>", "trash-2": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M3 6h18\" /> <path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\" /> <path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\" /> <line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\" /> <line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\" /> </svg>", "tv": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <rect width=\"20\" height=\"15\" x=\"2\" y=\"7\" rx=\"2\" ry=\"2\" /> <polyline points=\"17 2 12 7 7 2\" /> </svg>", "users": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\" /> <circle cx=\"9\" cy=\"7\" r=\"4\" /> <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\" /> <path d=\"M16 3.13a4 4 0 0 1 0 7.75\" /> </svg>", "utensils-crossed": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8\" /> <path d=\"M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7\" /> <path d=\"m2.1 21.8 6.4-6.3\" /> <path d=\"m19 5-7 7\" /> </svg>", "x": "<svg  xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" > <path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" /> </svg>"};
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const ic=(n,f)=>`<i class="li${f?' f':''}">${ICONS[n]}</i>`;
+const paint=(root=document)=>root.querySelectorAll('i[data-i]:not([data-p])').forEach(e=>{e.innerHTML=ICONS[e.dataset.i];e.dataset.p=1});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const cv=h=>`background:linear-gradient(135deg,hsl(${h} 85% 58%),hsl(${(h+40)%360} 75% 30%))`;
+const avBg=h=>`background:linear-gradient(135deg,hsl(${h} 80% 58%),hsl(${(h+30)%360} 75% 42%))`;
+const wave=(k,w=390,n=26)=>{let s='';for(let i=0;i<n;i++)s+=`<i style="--x:${(-(i*w/n)+Math.sin(i*.9)*22).toFixed(1)}px;--d:${(-i*.33).toFixed(2)}s"></i>`;return`<div class="wave ${k}" style="--w:${w}px">${s}</div>`};
+const plural=(n,f)=>{const a=n%10,b=n%100;return n+' '+(a==1&&b!=11?f[0]:a>=2&&a<=4&&(b<10||b>=20)?f[1]:f[2])},TRW=['трек','трека','треков'];
+const sec=s=>{const[m,x]=s.split(':');return +m*60+ +x},fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+
+/* ---------- data ---------- */
+const TR={};
+const addT=(id,t,a,h,d,ic)=>TR[id]={id,t,a,h,d,ic};
+[['z1','Хочешь?','Земфира',350,'3:44'],['z2','Искала','Земфира',330,'3:42'],['k1','Звезда по имени Солнце','Кино',10,'3:46'],['k2','Кукушка','Кино',5,'6:39'],
+ ['m1','Каждый раз','Монеточка',300,'3:20'],['p1','Легенда о богине гроз','Pyrokinesis',220,'3:58'],['s1','Положение','Скриптонит',250,'3:31'],['dt','Утро','Дайте танк (!)',40,'3:12'],
+ ['mt','Владивосток 2000','Мумий Тролль',190,'2:44'],['sp','Выхода нет','Сплин',120,'3:53'],['sp2','Моё сердце','Сплин',210,'3:58'],['bu','Танцы по расчёту','Буерак',80,'2:58'],
+ ['el','Прованс','Ёлка',20,'3:38'],['sh','Страшно','Shortparis',270,'4:05'],['ag','Татарин','Аигел',160,'3:15'],['b2','Полковнику никто не пишет','Би-2',30,'4:10'],
+ ['ak','Как на войне','Агата Кристи',0,'3:47'],['sg','Вечно молодой','Смысловые галлюцинации',200,'3:15'],['np','Крылья','Наутилус Помпилиус',190,'5:06'],
+ ['kx','Музыка из сериала «Кухня»','И. Канаев',28,'2:10']].forEach(r=>addT(...r));
+['Как звучит город','Тишина в студии','Почему мы слушаем грустное','Плейлист как дневник'].forEach((t,i)=>addT('e'+i,`Выпуск ${12-i}. ${t}`,'Разговоры о звуке',265,`${38+i*3}:10`,'mic'));
+['Как записывали первый альбом','Звук из подвала','Гитара за 3000 рублей'].forEach((t,i)=>addT('r'+i,t,'Как это записано',20,`${29+i*4}:40`,'mic'));
+['Глава первая','Глава вторая','Глава третья'].forEach((t,i)=>addT('o'+i,t,'А. С. Пушкин · «Евгений Онегин»',35,`${24+i*2}:05`,'book-open'));
+['Том первый. Глава 1','Том первый. Глава 2'].forEach((t,i)=>addT('d'+i,t,'Н. В. Гоголь · «Мёртвые души»',150,`${31+i*3}:20`,'book-open'));
+
+const FR=[{n:'Аня Соколова',s:'Аня',g:'Ане',gen:'Ани',i:'А',h:330,r:'Земфира, Мумий Тролль',m:78,c:['Земфира','Кино','Монеточка','Сплин']},
+ {n:'Максим Орлов',s:'Макс',g:'Максу',gen:'Макса',i:'М',h:200,r:'Скриптонит, Pyrokinesis',m:64,c:['Pyrokinesis','Скриптонит','Кино']},
+ {n:'Лера Ким',s:'Лера',g:'Лере',gen:'Леры',i:'Л',h:280,r:'Монеточка, Shortparis',m:71,c:['Монеточка','Земфира','Shortparis']},
+ {n:'Дима Белов',s:'Дима',g:'Диме',gen:'Димы',i:'Д',h:30,r:'Би-2, Сплин',m:52,c:['Сплин','Кино']},
+ {n:'Катя Миронова',s:'Катя',g:'Кате',gen:'Кати',i:'К',h:160,r:'Ёлка, Дайте танк (!)',m:69,c:['Дайте танк (!)','Земфира','Монеточка']}];
+const BLEND_T=[['z1','both'],['dt','her'],['p1','me'],['k1','both'],['mt','her'],['sh','new'],['s1','me'],['m1','both'],['sp','her'],['bu','me'],['el','her'],['ag','new']];
+
+const L={
+ vkmix:{t:'VK Микс',s:'Рекомендации для вас',h:215,w:'blue',tr:['k1','z1','sp2','m1','ag','dt','sh','np']},
+ mine:{t:'Мои треки',s:'Любимые треки из коллекции',h:310,w:'pink',tr:null},
+ love:{t:'Любовь',s:'Настроение',h:330,tr:['z1','m1','el','dt','k1']},joy:{t:'Радостно',s:'Настроение',h:45,tr:['dt','mt','bu','el','m1']},
+ sad:{t:'Грусть',s:'Настроение',h:205,tr:['sp','z2','sh','k2','z1']},work:{t:'Работа',s:'Занятие',h:228,tr:['ag','sh','p1','s1','sp2']},
+ sport:{t:'Тренировка',s:'Занятие',h:356,tr:['s1','p1','b2','ak','bu']},insp:{t:'Вдохновение',s:'Настроение',h:135,tr:['k1','np','ag','sg','mt']},
+ ld1:{t:'Ночной вайб',s:'Плейлист Даши К. · совпадение 97%',h:165,tr:['sh','ag','z1','sp','m1']},ld2:{t:'Русский рок навсегда',s:'Плейлист Игоря П. · совпадение 93%',h:250,tr:['k1','np','ak','sg','sp2']},
+ ed1:{t:'Новые имена',s:'Редакция VK Музыки',h:280,tr:['ag','sh','bu','p1']},ed2:{t:'Инди-радар',s:'Редакция VK Музыки',h:180,tr:['m1','sh','ag','dt']},ed3:{t:'Русский рок',s:'Редакция VK Музыки',h:5,tr:['k1','sp','np','ak','b2']},ed4:{t:'Саундтреки',s:'Музыка из кино и сериалов',h:28,tr:['b2','z2','sp2','ak','sg','np','kx']},
+ chart:{t:'Чарт недели',s:'Демо-данные',h:210,tr:['z1','s1','m1','p1','mt','k1','dt','sp']},
+ rock:{t:'Рок',s:'Жанр',h:0,tr:['k1','sp','np','ak','b2']},pop:{t:'Поп',s:'Жанр',h:320,tr:['el','m1','z1']},hip:{t:'Хип-хоп',s:'Жанр',h:250,tr:['s1','p1']},
+ indie:{t:'Инди',s:'Жанр',h:170,tr:['m1','sh','ag','bu']},alt:{t:'Альтернатива',s:'Жанр',h:275,tr:['sh','dt','sp2']},
+ my1:{t:'Дорога домой',s:'Ваш плейлист',h:200,tr:['sp','k1','z1','np','mt']},my2:{t:'Для бега',s:'Ваш плейлист',h:356,tr:['s1','p1','b2','bu']},my3:{t:'Вечер пятницы',s:'Ваш плейлист',h:300,tr:['mt','dt','el','m1']},
+ pod1:{t:'Разговоры о звуке',s:'Подкаст',h:265,ic:'mic',tr:['e0','e1','e2','e3']},pod2:{t:'Как это записано',s:'Подкаст',h:20,ic:'mic',tr:['r0','r1','r2']},
+ bk1:{t:'Евгений Онегин',s:'Аудиокнига · А. С. Пушкин',h:35,ic:'book-open',tr:['o0','o1','o2']},bk2:{t:'Мёртвые души',s:'Аудиокнига · Н. В. Гоголь',h:150,ic:'book-open',tr:['d0','d1']},
+ liked:{t:'Мне нравится',s:'',h:330,ic:'heart',tr:null},found:{t:'Найдено ассистентом',s:'',h:210,ic:'sparkles',tr:null},
+ brat2:{t:'Брат 2 — саундтрек',s:'Собрано ассистентом',h:20,ic:'clapperboard',tr:['b2','z2','sp2','ak','sg']}
+};
+const MOODS=[['love','Любовь','#d8449b'],['joy','Радостно','#ffc24a',1],['sad','Грусть','#1a8ee6'],['work','Работа','#4c68ee'],['sport','Тренировка','#df2f3c'],['insp','Вдохновение','#2e9a46']];
+
+const S={section:'home',stack:['main'],theme:'system',wave:'blue',liked:new Set(['z1','k1','sp','m1','np']),found:[],blends:[],blend:null,
+  q:[],qi:0,src:'VK Микс',srcKey:'vkmix',cur:null,playing:false,p:0,shuffle:false,repeat:false,
+  notifs:[{id:1,ic:'users',bg:'linear-gradient(135deg,#0077ff,#f45fff)',t:'Аня предлагает собрать Микс на двоих',s:'Совпадение вкусов 78% · 2 мин назад',a:'blend-with:0',u:1},
+          {id:2,ic:'utensils-crossed',bg:'#c56a1f',t:'Ищете песню из сериала? Спросите ассистента',s:'Например, что играло в «Кухне» · вчера',a:'demo:kitchen',u:1},
+          {id:3,ic:'mic',bg:'hsl(265 70% 50%)',t:'Новый выпуск «Разговоров о звуке»',s:'Выпуск 12. Как звучит город · вчера',a:'open:pod1',u:1}],
+  prefs:{mix:false,ai:false,privacy:true},optinHidden:false,mixset:{act:'Работаю',char:'Любимое',mood:'Спокойное'}};
+L.mine.tr=()=>[...S.liked];L.liked.tr=()=>[...S.liked];L.found.tr=()=>S.found;
+const listTracks=k=>{const l=L[k];const t=typeof l.tr=='function'?l.tr():l.tr;return t||[]};
+
+/* ---------- theme ---------- */
+const mq=matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(anim){const sc=$('#screen');const dark=S.theme=='dark'||(S.theme=='system'&&mq.matches);
+  if(anim){sc.classList.add('tt');setTimeout(()=>sc.classList.remove('tt'),450)}sc.classList.toggle('light',!dark);const tb=$('#thBtn');if(tb)tb.innerHTML=ic(S.theme=='light'?'sun':S.theme=='dark'?'moon':'monitor-smartphone')}
+try{S.theme=localStorage.getItem('vkm-theme')||'system';S.wave=localStorage.getItem('vkm-wave')||'blue'}catch(e){}
+mq.addEventListener?.('change',()=>{if(S.theme=='system'){applyTheme(true);if(top()=='settings')renderSettings();if($('#sheet').classList.contains('on'))themeSheet()}});
+const save=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+
+/* ---------- navigation ---------- */
+const top=()=>S.stack[S.stack.length-1];
+const RENDER={pl:()=>renderPl(),blend:()=>renderBlend(),notif:()=>renderNotif(),settings:()=>renderSettings(),ai:()=>{}};
+function layout(){S.stack.forEach((id,i)=>{const el=$('#'+id);el.classList.remove('push');el.classList.toggle('under',i<S.stack.length-1);el.style.zIndex=i+1});
+  ['pl','blend','ai','notif','settings'].forEach(id=>{if(!S.stack.includes(id)){const el=$('#'+id);el.classList.add('push');el.classList.remove('under');el.style.zIndex=S.stack.length+1}});
+  $('#screen').classList.toggle('on-ai',top()=='ai'&&S.smode=='ai');syncStatus()}
+function push(id){if(S.stack.includes(id)){S.stack=S.stack.slice(0,S.stack.indexOf(id)+1)}else S.stack.push(id);RENDER[id]?.();$('#'+id).scrollTop=0;layout();paint()}
+function back(){if(S.stack.length>1){S.stack.pop();layout();const t=top();if(t=='main')renderSection();else RENDER[t]?.();paint()}}
+function syncStatus(){const t=top();let w=$('#player').classList.contains('on')||$('#merge').classList.contains('on');
+  if(!w&&t=='main'&&S.section=='home'&&!$('#hdr').classList.contains('solid'))w=true;
+  if(!w&&t=='blend'&&$('#blend').scrollTop<220)w=true;
+  $('#screen').classList.toggle('stw',w)}
+
+/* ---------- sections ---------- */
+const trackRow=(id,key,i,extra='')=>{const t=TR[id];const cur=S.cur&&S.cur.id==id&&S.srcKey==key;
+  return`<div class="tr${cur?' cur':''}" data-act="play:${key}:${i}" role="button" tabindex="0"><div class="cv" style="${cv(t.h)}">${t.ic?ic(t.ic):''}</div><div class="tx"><b>${cur&&S.playing?'<span class="eq"><i></i><i></i><i></i></span>':''}${esc(t.t)}</b><small>${esc(t.a)}</small></div>${extra}<button class="ib" data-act="more:${id}:${key}" aria-label="Действия: ${esc(t.t)}">${ic('ellipsis')}</button></div>`};
+const card=(k,round)=>{const l=L[k];return`<div class="card" data-act="open:${k}" role="button" tabindex="0"><div class="cv" style="${cv(l.h)}${round?';border-radius:50%':''}">${l.ic?ic(l.ic):''}</div>${l.t}<small>${l.s}</small></div>`};
+function heroSlide(kind){const vk=kind==L.vkmix.w||kind=='blue';const key=kind=='blue'?'vkmix':'mine';const l=L[key];const playing=S.playing&&S.srcKey==key;
+  return`<div class="slide" id="sl-${key}">${wave(kind)}<div class="slide-c">
+    <button class="bigplay" data-act="hero:${key}" aria-label="${playing?'Пауза':'Слушать'} ${l.t}">${ic(playing?'pause':'play',1)}</button>
+    <h3>Слушать ${key=='vkmix'?'VK Микс':'мои треки'}</h3><p>${key=='vkmix'?'Музыкальные рекомендации для вас':'Любимые треки из вашей коллекции'}</p>
+    ${key=='vkmix'?`<button class="glass" data-act="mixset">${ic('sliders-horizontal')}Настроить</button>`:`<button class="glass" data-act="hero-shuffle">${ic('shuffle')}Перемешать</button>`}
+  </div></div>`}
+function renderSection(){const s=S.section;let h='';const keepX=$('#slides')?.scrollLeft||0;
+  $$('#pills button').forEach(b=>b.classList.toggle('on',b.dataset.act=='tab:'+s));
+  if(s=='home'){const order=S.wave=='blue'?['blue','pink']:['pink','blue'];
+    const other=order[1]=='pink'?'свои треки':'VK Микс';
+    const b=S.blends[0];
+    h=`<div class="hero"><div class="slides scroll" id="slides">${order.map(heroSlide).join('')}</div>
+      <div class="swipe"><button data-act="hero-swipe">${ic('chevron-left')}<span id="swipeTx">Проведите, чтобы включить ${other}</span>${ic('chevron-right')}</button></div></div>
+    <div class="pad">
+      <div class="sec-h"><div><small><span class="vkbadge"></span>НОВОЕ В VK МУЗЫКЕ</small><h4>Микс на двоих</h4></div></div>
+      <div class="promo" data-act="${b?'open-blend:0':'blend-start'}" role="button" tabindex="0"><div class="wv">${wave('mix',124,8)}</div><div class="pc">
+        ${b?`<span class="new">Обновлён сегодня</span><h5>Вы и ${b.f.s}</h5><p>${plural(b.tracks.length,TRW)}, из них 2 новых для вас обоих. Совпадение ${b.f.m}%</p><button class="btn" data-act="play-blend">${ic('play',1)}Слушать</button>`
+           :`<span class="new">Новое</span><h5>Смешайте вкусы с другом</h5><p>Общий плейлист, который каждый день собирается из музыки вас обоих</p><button class="btn" data-act="blend-start">Собрать микс</button>`}
+        <div class="avs"><span>${FR.slice(0,3).map(f=>`<i class="av" style="${avBg(f.h)}">${f.i}</i>`).join('')}</span>14 друзей уже собрали</div></div></div>
+      <div class="sec-h"><h4>Настроения и занятия</h4></div>
+      <div class="moods scroll">${MOODS.map(([k,t,c,d])=>`<button class="mood${d?' dk':''}" style="background:${c}" data-act="open:${k}">${ic('play',1)}<span>${t}</span></button>`).join('')}</div>
+      <div class="sec-h"><div><small>ИИ-АССИСТЕНТ</small><h4>Что это за песня?</h4></div></div>
+      <div class="ask" data-act="demo:kitchen" role="button" tabindex="0"><div class="orbit">${wave('mix',56,6)}</div><div style="flex:1"><b>Найду трек из сериала по сцене</b><small>«Что играло в „Кухне“, когда разбили посуду?»</small></div>${ic('chevron-right')}</div>
+      <div class="sec-h"><div><small><span class="vkbadge"></span>ТОЛЬКО В VK МУЗЫКЕ</small><h4>Слушайте друг друга</h4></div><button class="ib" data-act="tab:browse" aria-label="Все подборки">${ic('chevron-right')}</button></div>
+      <div class="ldd scroll">${[['ld1',97,'linear-gradient(135deg,#0f5c4a,#0b3b31)','Даша К.',165],['ld2',93,'linear-gradient(135deg,#3b3570,#241f4a)','Игорь П.',250]].map(([k,p,bg,o,hh])=>`<div class="ldc" style="background:${bg}" data-act="open:${k}" role="button" tabindex="0"><div class="pct">${p}% <small>· совпадение с вашим вкусом</small></div><h6>${L[k].t}</h6><div class="row"><div class="own"><i class="av" style="width:24px;height:24px;font-size:11px;${avBg(hh)}">${o[0]}</i>${o}</div><button class="pl" data-act="playlist:${k}" aria-label="Слушать ${L[k].t}">${ic('play',1)}</button></div></div>`).join('')}</div>
+      <div class="sec-h"><h4>Собрано для вас</h4></div>
+      <div class="shelf scroll">${['ed1','ed2','ed3','ed4'].map(k=>card(k)).join('')}</div>
+      <div class="sec-h"><h4>Недавно слушали</h4></div>
+      ${['sp2','m1','k2'].map((id,i)=>trackRow(id,'recent',i)).join('')}
+    </div>`}
+  else if(s=='my'){const lk=[...S.liked];
+    h=`<div class="pad"><div class="tiles" style="margin-top:8px">
+      <div class="tile" data-act="open:liked" role="button" tabindex="0">${ic('heart')}<div><b>Мне нравится</b><small>${plural(lk.length,TRW)}</small></div></div>
+      <div class="tile" data-act="${S.blends.length?'open-blend:0':'blend-start'}" role="button" tabindex="0">${ic('users')}<div><b>Миксы на двоих</b><small>${S.blends.length?plural(S.blends.length,['микс','микса','миксов']):'Пока нет'}</small></div></div>
+      <div class="tile" data-act="open:found" role="button" tabindex="0">${ic('sparkles')}<div><b>Найдено</b><small>${S.found.length} от ассистента</small></div></div>
+      <div class="tile" data-act="toast:Скачанные треки доступны без интернета" role="button" tabindex="0">${ic('download')}<div><b>Скачанное</b><small>Без интернета</small></div></div></div>
+      <div class="sec-h"><h4>Миксы на двоих</h4></div>
+      ${S.blends.length?S.blends.map((b,i)=>`<div class="tr" data-act="open-blend:${i}" role="button" tabindex="0"><div class="cv" style="border-radius:12px;width:48px;height:48px;position:relative;overflow:hidden">${wave('mix',48,5)}</div><div class="tx"><b>Вы и ${b.f.s}</b><small>Совпадение ${b.f.m}% · обновлён сегодня</small></div>${ic('chevron-right')}</div>`).join('')
+        :`<div class="empty"><b>Пока нет общих миксов</b>Выберите друга, и мы смешаем ваши вкусы в один плейлист<div style="margin-top:12px"><button class="btn" data-act="blend-start">Собрать первый микс</button></div></div>`}
+      <div class="sec-h"><h4>Плейлисты</h4><button class="ib" data-act="toast:Создание плейлиста появится в следующей версии прототипа" aria-label="Создать плейлист">${ic('plus')}</button></div>
+      ${['my1','my2','my3'].map(k=>`<div class="tr" data-act="open:${k}" role="button" tabindex="0"><div class="cv" style="${cv(L[k].h)}"></div><div class="tx"><b>${L[k].t}</b><small>${L[k].s}</small></div>${ic('chevron-right')}</div>`).join('')}
+      <div class="sec-h"><h4>Треки</h4><button class="ib" data-act="playlist:liked" aria-label="Слушать все">${ic('play',1)}</button></div>
+      ${lk.length?lk.map((id,i)=>trackRow(id,'liked',i)).join(''):'<div class="empty"><b>Здесь будут ваши треки</b>Нажмите на сердечко у любого трека</div>'}</div>`}
+  else if(s=='books'){
+    h=`<div class="pad"><div class="sec-h"><h4>Подкасты</h4></div><div class="shelf scroll">${card('pod1')}${card('pod2')}</div>
+      <div class="sec-h"><h4>Аудиокниги</h4></div><div class="shelf scroll">${card('bk1')}${card('bk2')}</div>
+      <div class="sec-h"><h4>Новые выпуски</h4></div>${['e0','r0','e1'].map((id,i)=>trackRow(id,id[0]=='e'?'pod1':'pod2',id[0]=='e'?+id[1]:0)).join('')}</div>`}
+  else{h=`<div class="pad"><div class="sec-h"><h4>Чарт недели</h4><button class="ib" data-act="open:chart" aria-label="Весь чарт">${ic('chevron-right')}</button></div>
+      ${listTracks('chart').slice(0,4).map((id,i)=>trackRow(id,'chart',i)).join('')}
+      <div class="sec-h"><h4>Жанры</h4></div>
+      <div class="tiles">${['rock','pop','hip','indie','alt','ed4'].map(k=>`<button class="genre" style="${cv(L[k].h)}" data-act="open:${k}"><span>${L[k].t}</span></button>`).join('')}</div>
+      <div class="sec-h"><h4>Слушайте друг друга</h4></div><div class="shelf scroll">${card('ld1')}${card('ld2')}</div></div>`}
+  $('#sec').innerHTML=h;if($('#slides'))$('#slides').scrollLeft=keepX;
+  const hdr=$('#hdr');hdr.classList.toggle('solid',s!='home'||$('#main').scrollTop>360);
+  const sl=$('#slides');if(sl)sl.onscroll=()=>{const i=Math.round(sl.scrollLeft/sl.clientWidth);const tx=$('#swipeTx');if(tx)tx.textContent='Проведите, чтобы включить '+((i==0)==(S.wave=='blue')?'свои треки':'VK Микс')};
+  syncStatus();paint()}
+$('#main').addEventListener('scroll',()=>{const solid=S.section!='home'||$('#main').scrollTop>360;$('#hdr').classList.toggle('solid',solid);syncStatus()},{passive:true});
+
+/* ---------- playlist page ---------- */
+let PLK='vkmix';
+function renderPl(){const l=L[PLK],tr=listTracks(PLK),liked=S.plLiked?.has(PLK);
+  $('#pl').innerHTML=`<div class="topbar"><button class="ib" data-act="back" aria-label="Назад">${ic('chevron-left')}</button><h3>${l.t}</h3><button class="ib" data-act="share:${PLK}" aria-label="Поделиться">${ic('send')}</button></div>
+  <div class="plh"><div class="cv" style="${cv(l.h)}">${ic(l.ic||'audio-lines')}</div><h2>${l.t}</h2><p>${l.s||''}${l.s?' · ':''}${plural(tr.length,TRW)}</p></div>
+  <div class="acts"><button class="rnd" data-act="playlist-shuffle:${PLK}" aria-label="Перемешать">${ic('shuffle')}</button><button class="btn" data-act="playlist:${PLK}" ${tr.length?'':'disabled style="opacity:.4"'}>${ic('play',1)}Слушать</button><button class="rnd${liked?' on':''}" data-act="pl-like:${PLK}" aria-label="Добавить в коллекцию">${ic('heart')}</button></div>
+  <div class="pad">${tr.length?tr.map((id,i)=>trackRow(id,PLK,i)).join(''):`<div class="empty" style="margin-top:12px"><b>Пока пусто</b>${PLK=='found'?'Спросите ассистента, и найденные треки появятся здесь<div style="margin-top:12px"><button class="btn" data-act="assistant">Открыть ассистента</button></div>':'Отметьте треки сердечком'}</div>`}</div>`}
+
+/* ---------- blend ---------- */
+const owner=o=>{const me=`<i class="av" style="${avBg(210)}">Я</i>`,her=`<i class="av" style="${avBg(S.blend.f.h)}">${S.blend.f.i}</i>`;
+  return o=='new'?'<span class="tag">Новое</span>':`<span class="who">${o=='me'?me:o=='her'?her:me+her}</span>`};
+function blendList(){const b=S.blend;let t=b.tracks.slice();
+  if(b.mode!='eq'){const pr=b.mode=='me'?['both','me','new','her']:['both','her','new','me'];t.sort((x,y)=>pr.indexOf(x[1])-pr.indexOf(y[1]));const drop=b.mode=='me'?'her':'me';let c=0;t=t.filter(x=>!(x[1]==drop&&++c>1))}
+  return t}
+function renderBlend(){const b=S.blend,f=b.f,list=blendList();L.blend={t:'Вы и '+f.s,s:'Микс на двоих',h:290,tr:list.map(x=>x[0])};
+  const c={me:0,her:0,x:0};list.forEach(x=>x[1]=='me'?c.me++:x[1]=='her'?c.her++:c.x++);
+  $('#blend').innerHTML=`<div class="topbar clear" id="btop"><button class="ib" data-act="back" aria-label="Назад">${ic('chevron-left')}</button><h3>Вы и ${f.s}</h3><button class="ib" data-act="blend-more" aria-label="Ещё">${ic('ellipsis')}</button></div>
+  <div class="bh">${wave('mix')}<div class="bc"><div class="pair"><i class="av" style="${avBg(210)}">Я</i><i class="av" style="${avBg(f.h)}">${f.i}</i></div>
+    <h2>Вы и ${f.s}</h2><div class="match">Совпадение вкусов <b>${f.m}%</b></div></div></div>
+  <div class="pad"><div class="common" style="margin-top:0">${f.c.map(a=>`<span>${a}</span>`).join('')}</div>
+    <div class="acts"><button class="rnd${b.saved?' on':''}" data-act="blend-save" aria-label="Сохранить в коллекцию">${ic('heart')}</button><button class="btn" data-act="play-blend">${ic('play',1)}Слушать</button><button class="rnd" data-act="blend-share" aria-label="Отправить ${f.g}">${ic('send')}</button></div>
+    <div class="meta"><span>${ic('repeat')}Обновится завтра в 6:00</span><span>${ic('audio-lines')}Слушаете вместе 3 дня подряд</span></div>
+    ${S.prefs.mix||S.optinHidden?'':`<div class="optin"><b>Сообщать, когда микс обновится?</b><p>Одно уведомление в день, когда появятся новые треки. Можно выключить в настройках.</p><div class="two"><button class="btn sec" data-act="optin:no">Не сейчас</button><button class="btn" data-act="optin:yes">Включить</button></div></div>`}
+    <div class="seg" id="seg"><span class="knob" style="transform:translateX(${['me','eq','her'].indexOf(b.mode)*100}%)"></span>${[['me','Больше моего'],['eq','Поровну'],['her','Больше '+f.gen]].map(([m,t])=>`<button data-act="mode:${m}" class="${b.mode==m?'on':''}">${t}</button>`).join('')}</div>
+    <div class="ratio"><i class="r1" style="flex:${c.me}"></i><i class="r3" style="flex:${c.x}"></i><i class="r2" style="flex:${c.her}"></i></div>
+    <div class="legend"><span>Ваше</span><span>Общее и новое</span><span>${f.s}</span></div>
+    ${list.map((x,i)=>trackRow(x[0],'blend',i,owner(x[1]))).join('')}
+    <button class="danger" data-act="blend-delete">Удалить микс</button></div>`;
+  $('#blend').onscroll=()=>{$('#btop')?.classList.toggle('solid',$('#blend').scrollTop>220);syncStatus()};paint()}
+function makeBlend(f){let b=S.blends.find(x=>x.f==f);if(!b){b={f,tracks:BLEND_T.map(x=>x.slice()),mode:'eq',saved:false};S.blends.unshift(b)}S.blend=b;return b}
+const msubs=['Смешиваем вкусы…','Ищем общих артистов','Подбираем новое для вас обоих'];
+function startMerge(f){closeSheet();const m=$('#merge');$('#mw1').innerHTML=wave('blue',150,10);$('#mw2').innerHTML=wave('pink',150,10);$('#mw3').innerHTML=wave('mix',210,12);
+  m.classList.remove('go');void m.offsetWidth;m.classList.add('on','go');syncStatus();const t0=performance.now();
+  const tick=now=>{const k=Math.min(1,(now-t0)/2600);$('#mNum').textContent=Math.round(f.m*(1-(1-k)**3))+'%';$('#mSub').textContent=msubs[Math.min(2,Math.floor(k*3))];
+    if(k<1)requestAnimationFrame(tick);else setTimeout(()=>{makeBlend(f);push('blend');m.classList.remove('on');syncStatus();if(top()=='blend'||S.stack.includes('main'))renderSection()},600)};
+  requestAnimationFrame(tick)}
+
+/* ---------- notifications & settings ---------- */
+function renderNotif(){$('#notif').innerHTML=`<div class="topbar"><button class="ib" data-act="back" aria-label="Назад">${ic('chevron-left')}</button><h3>Уведомления</h3><span class="ib"></span></div>
+  <div class="pad">${S.notifs.map(n=>`<div class="nt" data-act="${n.a}" role="button" tabindex="0"><span class="ic" style="background:${n.bg}">${ic(n.ic)}</span><div class="tx"><b>${n.t}</b><small>${n.s}</small></div>${n.u?'<span class="un" aria-label="Новое"></span>':''}</div>`).join('')}
+  <p class="demo">Уведомления о миксах приходят, только если вы включили их сами.</p></div>`;
+  setTimeout(()=>{S.notifs.forEach(n=>n.u=0);updBadge()},900)}
+const updBadge=()=>{const n=S.notifs.filter(x=>x.u).length;const b=$('#badge');b.textContent=n;b.style.display=n?'':'none'};
+const themeCards=()=>`<div class="themes">${[['light','Дневная','<span class="l"></span>'],['dark','Ночная','<span class="d"></span>'],['system','Системная','<span class="l"></span><span class="d"></span>']].map(([k,t,pv])=>`<button class="th${S.theme==k?' on':''}" data-act="theme:${k}" aria-pressed="${S.theme==k}"><div class="pv">${pv}</div>${t}</button>`).join('')}</div>
+  <p class="demo">Системная тема следует настройкам телефона, сейчас ${mq.matches?'тёмная':'светлая'}.</p>`;
+function themeSheet(){openSheet(`<h3>Оформление</h3><p>Как будет выглядеть VK Музыка</p>${themeCards()}<button class="act" data-act="sheet-settings" style="margin-top:6px">${ic('settings')}Все настройки</button>`)}
+function renderSettings(){const sys=mq.matches?'тёмная':'светлая';
+  $('#settings').innerHTML=`<div class="topbar"><button class="ib" data-act="back" aria-label="Назад">${ic('chevron-left')}</button><h3>Настройки</h3><span class="ib"></span></div>
+  <div class="pad"><div class="row" style="border:0"><span class="me" style="width:56px;height:56px;font-size:20px">Я</span><div class="tx"><b style="font-size:18px">Ваш профиль</b><small>Подписка VK Музыка активна</small></div></div>
+  <div class="grp">Оформление</div>
+  ${themeCards()}
+  <div class="grp">Волна на главной</div>
+  <div class="waves">${[['blue','Синяя<small>VK Микс</small>'],['pink','Розовая<small>Мои треки</small>']].map(([k,t])=>`<button class="wv-opt${S.wave==k?' on':''}" data-act="wave:${k}" aria-pressed="${S.wave==k}">${wave(k,170,10)}<span>${t}</span></button>`).join('')}</div>
+  <div class="grp">Уведомления</div>
+  ${[['mix','Обновления миксов на двоих','Раз в день, когда появятся новые треки'],['ai','Находки ассистента','Когда найдём песню, которую вы искали']].map(([k,t,s])=>`<div class="row"><div class="tx">${t}<small>${s}</small></div><button class="sw" role="switch" aria-checked="${S.prefs[k]}" aria-label="${t}" data-act="pref:${k}"></button></div>`).join('')}
+  <div class="grp">Приватность</div>
+  <div class="row"><div class="tx">Показывать друзьям совпадение вкусов<small>Друзья видят только процент, а не историю прослушиваний</small></div><button class="sw" role="switch" aria-checked="${S.prefs.privacy}" aria-label="Показывать совпадение вкусов" data-act="pref:privacy"></button></div>
+  <button class="danger" data-act="demo:reset">Сбросить прототип</button></div>`;paint()}
+
+/* ---------- sheets & dialogs ---------- */
+function openSheet(html){const sh=$('#sheet');sh.innerHTML='<div class="grab"></div>'+html;sh.classList.add('on');$('#dim').classList.add('on');paint(sh);sh.scrollTop=0}
+function closeSheet(){$('#sheet').classList.remove('on');$('#dim').classList.remove('on');$('#dialog').classList.remove('on')}
+function picker(q=''){const list=FR.map((f,i)=>({f,i})).filter(x=>x.f.n.toLowerCase().includes(q.toLowerCase()));
+  return list.map(({f,i})=>`<button class="fr" data-act="friend:${i}"><i class="av" style="${avBg(f.h)}">${f.i}</i><span class="tx"><b>${f.n}</b><small>Слушает: ${f.r}</small></span><span class="pct">${f.m}%</span></button>`).join('')||'<p class="demo">Никого не нашли</p>'}
+function openPicker(){openSheet(`<h3>С кем смешаем?</h3><p>Процент показывает, насколько похожи ваши вкусы</p>
+  <label class="search">${ic('search')}<input id="fq" placeholder="Поиск по друзьям" autocomplete="off"></label><div id="frs">${picker()}</div>
+  <button class="fr" data-act="invite"><i class="av" style="background:var(--s1);color:var(--link)">${ic('link')}</i><span class="tx"><b style="color:var(--link)">Пригласить по ссылке</b><small>Для друзей, которых ещё нет в VK Музыке</small></span></button>`);
+  $('#fq').oninput=e=>{$('#frs').innerHTML=picker(e.target.value);paint($('#frs'))}}
+function trackSheet(id,key){const t=TR[id],lk=S.liked.has(id);
+  openSheet(`<div class="th1"><div class="cv" style="${cv(t.h)}">${t.ic?ic(t.ic):''}</div><div><b>${esc(t.t)}</b><div class="demo" style="margin:0">${esc(t.a)}</div></div></div>
+  <button class="act" data-act="like:${id}">${ic('heart')}${lk?'Убрать из «Мне нравится»':'Добавить в «Мне нравится»'}</button>
+  <button class="act" data-act="next-up:${id}">${ic('list-plus')}Слушать следующим</button>
+  ${key=='blend'?`<button class="act" data-act="blend-remove:${id}">${ic('x')}Убрать из микса</button>`:`<button class="act" data-act="add-blend:${id}">${ic('users')}Добавить в Микс на двоих</button>`}
+  <button class="act" data-act="where:${id}">${ic('clapperboard')}Где звучал этот трек</button>
+  <button class="act" data-act="share-t:${id}">${ic('send')}Поделиться</button>`)}
+function shareSheet(title,sub,kind){openSheet(`<h3>Поделиться</h3><div class="msgp"><div class="cvw">${wave(kind||'mix',56,6)}</div><div><b>${esc(title)}</b><small>${esc(sub)}</small></div></div>
+  <button class="btn w" data-act="sent:Отправлено в Сообщения" style="margin-bottom:8px">${ic('send')}Отправить в Сообщения</button>
+  <button class="btn sec w" data-act="sent:Открываем редактор историй" style="margin-bottom:8px">Поделиться в истории</button>
+  <button class="btn sec w" data-act="copy">${ic('link')}Скопировать ссылку</button>`)}
+function mixSheet(){const g=[['act','Занятие',['Просыпаюсь','В дороге','Работаю','Тренируюсь','Засыпаю']],['char','Характер',['Любимое','Незнакомое','Популярное']],['mood','Настроение',['Бодрое','Весёлое','Спокойное','Грустное']]];
+  openSheet(`<h3>Настроить VK Микс</h3><p>Микс подстроится под то, чем вы заняты</p>${g.map(([k,t,o])=>`<b>${t}</b><div class="chipset">${o.map(x=>`<button data-act="mx:${k}:${x}" class="${S.mixset[k]==x?'on':''}" aria-pressed="${S.mixset[k]==x}">${x}</button>`).join('')}</div>`).join('')}
+  <button class="btn w" data-act="mx-apply">Применить и слушать</button>`)}
+function queueSheet(){openSheet(`<h3>Очередь</h3><p>${esc(S.src)}</p>${S.q.map((id,i)=>`<div class="tr${i==S.qi?' cur':''}" data-act="qjump:${i}" role="button" tabindex="0"><div class="cv" style="${cv(TR[id].h)}">${TR[id].ic?ic(TR[id].ic):''}</div><div class="tx"><b>${esc(TR[id].t)}</b><small>${esc(TR[id].a)}</small></div></div>`).join('')}`)}
+let confirmFn=null;
+function confirmBox(t,p,ok,fn){confirmFn=fn;const d=$('#dialog');d.innerHTML=`<h3>${t}</h3><p>${p}</p><div class="two"><button class="btn sec" data-act="close">Отмена</button><button class="btn red" data-act="confirm-ok">${ok}</button></div>`;
+  d.classList.add('on');$('#dim').classList.add('on')}
+
+/* ---------- player ---------- */
+function setQueue(ids,i,src,key){S.q=ids.slice();S.qi=i;S.src=src;S.srcKey=key;S.cur=TR[S.q[i]];S.p=0;S.playing=true;drawPlayer();refreshLists()}
+function playList(key,i=0,shuffle){let ids=listTracks(key);if(!ids.length){toast('В списке пока нет треков');return}
+  if(shuffle){ids=ids.slice().sort(()=>Math.random()-.5);i=0}
+  setQueue(ids,i,key=='blend'?`Микс на двоих · Вы и ${S.blend.f.s}`:L[key]?.t||'VK Музыка',key)}
+function step(d){if(!S.q.length)return;let n=S.qi+d;if(S.shuffle&&d>0)n=Math.floor(Math.random()*S.q.length);
+  if(n>=S.q.length){if(!S.repeat){S.playing=false;S.p=0;drawPlayer();return}n=0}if(n<0)n=S.q.length-1;S.qi=n;S.cur=TR[S.q[n]];S.p=0;S.playing=true;drawPlayer();refreshLists()}
+function refreshLists(){const t=top();if(t=='main')renderSection();else if(t=='pl')renderPl();else if(t=='blend'){const st=$('#blend').scrollTop;renderBlend();$('#blend').scrollTop=st}else if(t=='ai'&&S.smode=='search')renderSearch()}
+const WHY={both:'Вы оба часто слушаете этого артиста',me:'Из ваших любимых. Может понравиться и другу',her:'Нравится другу и похоже на то, что слушаете вы',new:'Новое для вас обоих, подобрано на стыке вкусов'};
+function drawPlayer(){const t=S.cur;if(!t)return;
+  $('#miniCv').style.cssText=cv(t.h);$('#miniCv').innerHTML=t.ic?ic(t.ic):'';
+  $('#miniTx').innerHTML=`<b>${esc(t.t)}</b><small>${esc(t.a)}</small>`;
+  $('#miniPP').innerHTML=ic(S.playing?'pause':'play',1);$('#miniPP').setAttribute('aria-label',S.playing?'Пауза':'Слушать');
+  $('#pPP').innerHTML=ic(S.playing?'pause':'play',1);$('#pPP').setAttribute('aria-label',S.playing?'Пауза':'Слушать');
+  $('#pArt').style.cssText=cv(t.h);$('#pArt').innerHTML=ic(t.ic||'audio-lines');
+  $('#pT').textContent=t.t;$('#pA').textContent=t.a;$('#pDur').textContent=t.d;$('#pFrom').textContent=S.src;
+  $('#player').style.background=`linear-gradient(180deg,hsl(${t.h} 60% 32%),hsl(${(t.h+40)%360} 50% 10%) 78%)`;
+  $('#pLike').classList.toggle('on',S.liked.has(t.id));
+  const bt=S.srcKey=='blend'&&S.blend?S.blend.tracks.find(x=>x[0]==t.id):null;const w=$('#pWhy');w.style.display=bt?'flex':'none';if(bt)w.innerHTML=owner(bt[1])+`<span>${WHY[bt[1]]}</span>`;
+  $('#shuf').classList.toggle('on',S.shuffle);$('#rep').classList.toggle('on',S.repeat);prog()}
+function prog(){const t=S.cur;if(!t)return;const pc=Math.min(100,S.p/sec(t.d)*100);$('#miniBar').style.width=pc+'%';$('#pBar').style.width=pc+'%';$('#pCur').textContent=fmt(S.p)}
+setInterval(()=>{if(!S.playing||!S.cur)return;S.p++;if(S.p>=sec(S.cur.d))step(1);else prog()},1000);
+$('#prog').addEventListener('click',e=>{const r=e.currentTarget.getBoundingClientRect();const k=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));S.p=Math.floor(k*sec(S.cur.d));prog()});
+const openPlayer=()=>{$('#player').classList.add('on');syncStatus()},closePlayer=()=>{$('#player').classList.remove('on');syncStatus()};
+
+/* ---------- assistant ---------- */
+const AQ=[];let busy=false;const msgs=$('#msgs'),aiPg=$('#ai');
+const down=()=>aiPg.scrollTo({top:aiPg.scrollHeight,behavior:'smooth'});
+const resRow=(id,q,k,c)=>{const t=TR[id];return`<div class="res"><div class="cv" style="${cv(t.h)}">${t.ic?ic(t.ic):''}</div><div class="tx"><b>${esc(t.t)}</b><small>${esc(t.a)}${c?` · совпадение <span class="conf">${c}%</span>`:''}</small></div><button class="go" data-act="aiplay:${q}:${k}" aria-label="Слушать ${esc(t.t)}">${ic('play',1)}</button></div>`};
+const filmRow=f=>`<div class="res"><div class="cv" style="${cv(f.h)};height:68px;border-radius:8px">${ic('clapperboard')}</div><div class="tx"><b>${f.t}</b><small>${f.y} · ${f.n}</small></div><button class="vkv" data-act="vkvideo:${f.t}" aria-label="Смотреть «${f.t}» в VK Видео">${ic('tv')}Смотреть</button></div>`;
+function addUser(html){$('#aiHome').style.display='none';const u=document.createElement('div');u.className='u'+(html.startsWith('<img')?' img':'');u.innerHTML=html;msgs.append(u)}
+function addAgent(){const a=document.createElement('div');a.innerHTML=`<div class="who-ai"><span class="orbit">${wave('mix',24,4)}</span>Ассистент</div><div class="steps"></div>`;msgs.append(a);down();return a}
+async function steps(a,list){const box=a.querySelector('.steps');for(const s of list){const st=document.createElement('div');st.className='st';st.innerHTML=`<span class="dt"></span>${s}`;box.append(st);down();await sleep(650);st.classList.add('done');st.querySelector('.dt').innerHTML=ic('check')}}
+async function skeleton(a,n=2){const sk=document.createElement('div');sk.innerHTML='<div class="skel"></div>'.repeat(n);a.append(sk);down();await sleep(650);sk.remove()}
+function finish(a,html){a.insertAdjacentHTML('beforeend',html);paint(a);down();busy=false}
+function tracksBlock(ids,conf={}){const q=AQ.push(ids)-1;ids.forEach(id=>{if(!S.found.includes(id))S.found.unshift(id)});return ids.map((id,k)=>resRow(id,q,k,conf[id])).join('')}
+const follow=arr=>`<div class="follow">${arr.map(([t,a,i])=>`<button data-act="${a}">${i?ic(i):''}${t}</button>`).join('')}</div>`;
+const SC={
+ brat2:{st:['Понимаю запрос: саундтрек фильма','Нахожу фильм «Брат 2» (2000)','Сверяю треки с каталогом VK Музыки'],
+  out:()=>`<p class="atext">Нашёл саундтрек «Брата 2». Эти песни есть в VK Музыке:</p>${filmRow({t:'Брат 2',y:'2000',n:'Саундтрек фильма',h:20})}${tracksBlock(['b2','z2','sp2','ak','sg'])}${follow([['Открыть как плейлист','open:brat2','list-music'],['А что звучало в первом «Брате»?','ask:Песня из «Брата», где поют про крылья']])}`},
+ wings:{st:['Понимаю: песня из фильма «Брат» (1997)','Ищу в саундтреке по слову «крылья»','Нашёл совпадение'],
+  out:()=>`<p class="atext">Это «Крылья» группы Наутилус Помпилиус. Песня звучит в фильме «Брат» (1997), саундтрек которого построен на песнях этой группы.</p>${tracksBlock(['np'],{np:94})}`},
+ zem:{st:['Разбираю описание: медленная, Земфира','Ищу по фразе из припева','Нашёл совпадение'],
+  out:()=>`<p class="atext">Скорее всего, это «Хочешь?» с альбома «Прости меня, моя любовь» (2000).</p>${tracksBlock(['z1','z2'],{z1:96,z2:31})}${follow([['Это не она','ask:Это не та песня']])}`},
+ kuk:{st:['Определяю песню: «Кукушка», группа Кино','Ищу её в фильмах и сериалах','Проверяю кавер-версии'],
+  out:()=>`<p class="atext">Оригинал вышел на «Чёрном альбоме» группы Кино в 1990 году. Самое известное появление в кино — кавер Полины Гагариной для фильма «Битва за Севастополь» (2015).</p>${filmRow({t:'Битва за Севастополь',y:'2015',n:'Кавер Полины Гагариной',h:15})}${tracksBlock(['k2'])}`},
+ none:{st:['Разбираю запрос','Ищу совпадения в каталоге и базе фильмов'],
+  out:()=>`<p class="atext">Пока не уверен в ответе. Подскажите, что вы помните лучше всего:</p>${follow([['Слышал в фильме или сериале','hint:Название, сезон, серия и что происходило в сцене','clapperboard'],['Есть фото или скриншот','photo','image-plus'],['Помню пару слов','hint:Напишите слова, которые помните','sparkles']])}`}
+};
+const route=q=>{q=q.toLowerCase();if(/кухн/.test(q))return'kitchen';if(/брат[ае]?\s*-?\s*2|брат\s*два/.test(q))return'brat2';if(/кукушк/.test(q))return'kuk';if(/земфир|хочешь/.test(q))return'zem';if(/крыл|брат/.test(q))return'wings';
+  if(!/[?]|как(ая|ой|ие)|что (играл|за)|где (звуч|игра)|сери|сезон|фильм|сцен|из /.test(q)){const hit=Object.values(TR).filter(t=>!t.ic&&(t.a.toLowerCase().includes(q)||t.t.toLowerCase().includes(q)));if(hit.length)return{cat:hit.map(t=>t.id)}}
+  return'none'};
+async function ask(text){text=String(text).trim();if(!text||busy)return;busy=true;$('#ask').value='';$('#ask').placeholder='Опишите песню, сцену или фильм';
+  openMode('ai');addUser(esc(text));const a=addAgent();const r=route(text);
+  if(r=='kitchen')return kitchen(a);
+  if(typeof r=='object'){await skeleton(a,2);return finish(a,`<p class="atext">Нашёл в каталоге:</p>${tracksBlock(r.cat.slice(0,5))}`)}
+  const sc=SC[r];await steps(a,sc.st);await skeleton(a,1);finish(a,sc.out())}
+async function kitchen(a){await steps(a,['Понимаю запрос: сериал «Кухня», 2 сезон, 3 серия','Ищу в серии сцены по описанию «разбили посуду»']);
+  finish(a,`<p class="atext">В этой серии две похожие сцены. Какую вы имеете в виду?</p><div class="opts">
+   <button data-act="kscene:1"><span class="n">1</span><span><b>На кухне ресторана</b><small>Около 9-й минуты · звучит музыка</small></span></button>
+   <button data-act="kscene:2"><span class="n">2</span><span><b>В зале ресторана</b><small>Около 27-й минуты · фоновая музыка</small></span></button></div>`)}
+async function kscene(n){if(busy)return;busy=true;$$('.opts button').forEach(b=>b.disabled=true);addUser(n==1?'На кухне ресторана':'В зале ресторана');const a=addAgent();
+  await steps(a,['Распознаю музыку по аудиодорожке сцены','Сверяю с каталогом VK Музыки']);await skeleton(a,2);
+  const tc=n==1?'09:14':'27:02';
+  finish(a,`<div class="scene"><div class="frame">${ic('utensils-crossed')}<span class="tc">С2 · Э3 · ${tc}</span></div><button class="vkv big" data-act="vkvideo:«Кухня», 2 сезон, 3 серия с ${tc}">${ic('tv')}Смотреть сцену в VK Видео с ${tc}</button><div class="tx"><b>Сцена найдена</b><small>«Кухня», 2 сезон, 3 серия · ${n==1?'кухня ресторана':'зал ресторана'}</small></div></div>
+   <p class="atext">В сцене звучит оригинальная музыка сериала. Автор музыки к «Кухне» — композитор И. Канаев. Совпадение по аудиоотпечатку 92%.</p>
+   ${tracksBlock(['kx'],{kx:92})}
+   ${follow([['Подборка «Саундтреки»','open:ed4','list-music'],['Это другая мелодия','ask:Это не та мелодия']])}
+   <p class="demo">Демо: в продукте трек определяется по аудиодорожке серии. Сцены, тайм-код и название трека здесь условные.</p>`)}
+function analyse(src){return new Promise(res=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=30;c.height=30;const x=c.getContext('2d');x.drawImage(im,0,0,30,30);
+  const d=x.getImageData(0,0,30,30).data,b=[[0,0,0],[0,0,0],[0,0,0]];for(let i=0;i<d.length;i+=4){const k=Math.min(2,Math.floor(i/4/300));b[k][0]+=d[i];b[k][1]+=d[i+1];b[k][2]+=d[i+2]}
+  const pal=b.map(v=>v.map(z=>Math.round(z/300)));const[r,g,bl]=[0,1,2].map(j=>pal.reduce((s,p)=>s+p[j],0)/3);const mx=Math.max(r,g,bl),mn=Math.min(r,g,bl),l=(mx+mn)/510;let h=0;
+  if(mx!=mn){h=mx==r?((g-bl)/(mx-mn))%6:mx==g?(bl-r)/(mx-mn)+2:(r-g)/(mx-mn)+4;h=(h*60+360)%360}
+  res({key:l<.28?'night':mx-mn<28?'calm':(h<55||h>300)?'warm':h<160?'green':'cool',pal})};im.onerror=()=>res({key:'calm',pal:[]});im.src=src})}
+const PM={night:['тёмные ночные тона','спокойное, ночное',['sp','z1','sh']],calm:['светлые нейтральные тона','спокойное, утреннее',['m1','el','z1']],warm:['тёплые закатные тона','тёплое, летнее',['mt','dt','m1']],cool:['холодные синие тона','просторное, прохладное',['k1','sp2','ag']],green:['зелёные природные тона','лёгкое, свежее',['el','bu','dt']]};
+async function photoFlow(src){if(busy)return;busy=true;openMode('ai');addUser(`<img src="${src}" alt="Ваше фото">`);const a=addAgent();const{key,pal}=await analyse(src);const[tone,mood,ids]=PM[key];
+  await steps(a,['Смотрю на фото','Определяю цвета и настроение','Подбираю треки под атмосферу']);
+  finish(a,`${pal.length?`<div class="pal">${pal.map(p=>`<i style="background:rgb(${p.join(',')})"></i>`).join('')}</div>`:''}<p class="atext">Вижу ${tone}, настроение — ${mood}. Музыки или текста на снимке нет, поэтому подобрал треки под атмосферу. Если пришлёте афишу, обложку или кадр из видео, найду конкретную песню.</p>${tracksBlock(ids)}`)}
+function samplePhoto(){const c=document.createElement('canvas');c.width=480;c.height=360;const x=c.getContext('2d');const sky=x.createLinearGradient(0,0,0,230);sky.addColorStop(0,'#3b2a7a');sky.addColorStop(.55,'#ff6a5c');sky.addColorStop(1,'#ffb347');x.fillStyle=sky;x.fillRect(0,0,480,230);
+  x.fillStyle='#ffd27a';x.beginPath();x.arc(240,218,46,0,7);x.fill();const sea=x.createLinearGradient(0,230,0,360);sea.addColorStop(0,'#d9574f');sea.addColorStop(1,'#3a2250');x.fillStyle=sea;x.fillRect(0,230,480,130);return c.toDataURL('image/jpeg',.85)}
+$('#composer').addEventListener('submit',e=>{e.preventDefault();ask($('#ask').value)});
+$('#file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>photoFlow(r.result);r.readAsDataURL(f);e.target.value=''});
+
+/* ---------- catalog search ---------- */
+S.smode='search';S.recent=['Земфира','Кино','Сплин'];
+const ARTISTS=[...new Set(Object.values(TR).filter(t=>!t.ic).map(t=>t.a))];
+ARTISTS.forEach((a,i)=>{const ids=Object.values(TR).filter(t=>t.a==a).map(t=>t.id);L['ar'+i]={t:a,s:'Исполнитель',h:TR[ids[0]].h,tr:ids}});
+const QRE=/[?]|как(ая|ой|ие)\s|что (играл|за)|где (звуч|игра)|сери[яию]|сезон|фильм|сцен|песн[яю] (где|про|из|с)|помню|мелоди/i;
+const hl=(s,q)=>{const i=s.toLowerCase().indexOf(q);return i<0?esc(s):esc(s.slice(0,i))+'<span class="hl">'+esc(s.slice(i,i+q.length))+'</span>'+esc(s.slice(i+q.length))};
+const addRecent=t=>{t=t.trim();if(t&&!QRE.test(t))S.recent=[t,...S.recent.filter(x=>x.toLowerCase()!=t.toLowerCase())].slice(0,6)};
+function searchHits(q){const ar=ARTISTS.map((a,i)=>({a,i})).filter(x=>x.a.toLowerCase().includes(q)).slice(0,3);
+  const tr=Object.values(TR).filter(t=>!t.ic&&(t.t.toLowerCase().includes(q)||t.a.toLowerCase().includes(q))).map(t=>t.id).slice(0,8);
+  const pls=Object.entries(L).filter(([k,l])=>!/^ar\d|^(blend|srch|mine|liked|found|vkmix)$/.test(k)&&l.t.toLowerCase().includes(q)).slice(0,4);return{ar,tr,pls}}
+function renderSearch(){const raw=$('#sq').value,q=raw.trim().toLowerCase();$('#sqx').style.visibility=raw?'visible':'hidden';let h='';
+  const askRow=lead=>`<button class="askrow" data-act="sq-ask"><span class="orbit">${wave('mix',40,5)}</span><span style="flex:1"><b>${lead}</b><br><small>«${esc(raw.trim())}»</small></span>${ic('sparkles')}</button>`;
+  if(!q){h=`<div class="grp" style="margin-top:8px">Недавние запросы</div><div class="chipset">${S.recent.map(r=>`<button data-act="sq-set:${esc(r)}">${esc(r)}</button>`).join('')}</div>
+    <button class="askrow" data-act="smode:ai"><span class="orbit">${wave('mix',40,5)}</span><span style="flex:1"><b>Не помните название?</b><br><small>Опишите песню, сцену из фильма или пришлите фото — найдёт ассистент</small></span>${ic('chevron-right')}</button>
+    <div class="grp">Жанры и подборки</div><div class="tiles">${['rock','pop','hip','indie','alt','ed4'].map(k=>`<button class="genre" style="${cv(L[k].h)}" data-act="open:${k}"><span>${L[k].t}</span></button>`).join('')}</div>`}
+  else{const{ar,tr,pls}=searchHits(q);L.srch={t:'Результаты поиска',s:'«'+raw.trim()+'»',h:210,tr};const qlike=QRE.test(raw);
+    if(!ar.length&&!tr.length&&!pls.length)h=`<div class="empty" style="margin-top:8px"><b>В каталоге ничего не нашлось</b>Проверьте написание. Если это описание песни или сцены — его поймёт ассистент</div>${askRow('Спросить ассистента')}`;
+    else{if(qlike)h+=askRow('Похоже на вопрос — спросите ассистента');
+      if(ar.length)h+=`<div class="grp">Исполнители</div>`+ar.map(({a,i})=>`<div class="tr" data-act="open:ar${i}" role="button" tabindex="0"><div class="cv" style="${cv(L['ar'+i].h)};border-radius:50%"></div><div class="tx"><b>${hl(a,q)}</b><small>Исполнитель · ${plural(L['ar'+i].tr.length,TRW)}</small></div>${ic('chevron-right')}</div>`).join('');
+      if(tr.length)h+=`<div class="grp">Треки</div>`+tr.map((id,i)=>trackRow(id,'srch',i)).join('');
+      if(pls.length)h+=`<div class="grp">Плейлисты и подборки</div>`+pls.map(([k,l])=>`<div class="tr" data-act="open:${k}" role="button" tabindex="0"><div class="cv" style="${cv(l.h)}">${l.ic?ic(l.ic):''}</div><div class="tx"><b>${hl(l.t,q)}</b><small>${esc(l.s||'Плейлист')}</small></div>${ic('chevron-right')}</div>`).join('');
+      if(!qlike)h+=askRow('Не то? Спросите ассистента')}}
+  $('#sres').innerHTML=h}
+function applyMode(){const s=S.smode=='search';$('#sWrap').style.display=s?'':'none';$('#aWrap').style.display=s?'none':'';
+  [['#tabS',s],['#tabA',!s]].forEach(([id,on])=>{$(id).classList.toggle('on',on);$(id).setAttribute('aria-selected',on)});
+  $('#aiNew').style.visibility=s?'hidden':'';if(s)renderSearch();layout()}
+function openMode(m,focus){S.smode=m;if(top()!='ai')push('ai');applyMode();if(m=='search'&&focus)setTimeout(()=>{try{$('#sq').focus({preventScroll:true})}catch(e){}},420)}
+$('#sq').addEventListener('input',renderSearch);
+$('#sq').addEventListener('keydown',e=>{if(e.key!='Enter')return;e.preventDefault();const t=$('#sq').value.trim();if(!t)return;const{ar,tr,pls}=searchHits(t.toLowerCase());
+  if(QRE.test(t)||(!ar.length&&!tr.length&&!pls.length))ask(t);else{addRecent(t);$('#sq').blur();renderSearch()}});
+
+/* ---------- toast ---------- */
+let tt;function toast(s){const t=$('#toast');t.textContent=s;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2300)}
+
+/* ---------- actions ---------- */
+function act(a,el,e){const[k,...r]=a.split(':');const v=r.join(':');
+ switch(k){
+  case'tab':if(top()!='main'){S.stack=['main'];layout()}S.section=v;renderSection();$('#main').scrollTop=0;syncStatus();break;
+  case'push':push(v);break;
+  case'search':openMode('search',true);break;
+  case'vkvideo':toast('Откроется VK Видео: '+v+'. Музыка продолжит играть в мини-плеере');break;
+  case'assistant':openMode('ai');break;
+  case'smode':openMode(v,v=='search');break;
+  case'sq-set':$('#sq').value=v;renderSearch();break;
+  case'sq-clear':$('#sq').value='';renderSearch();$('#sq').focus({preventScroll:true});break;
+  case'sq-ask':{const t=$('#sq').value.trim();if(t)ask(t);break}
+  case'theme-sheet':themeSheet();break;
+  case'sheet-settings':closeSheet();push('settings');break;
+  case'back':back();break;
+  case'close':closeSheet();break;
+  case'open':PLK=v;push('pl');break;
+  case'playlist':playList(v);break;
+  case'playlist-shuffle':playList(v,0,true);toast('Перемешали');break;
+  case'play':{const[key,i]=r;if(key=='srch')addRecent($('#sq').value);if(key=='recent'){setQueue(['sp2','m1','k2'],+i,'Недавно слушали','recent')}else if(key=='blend'){playList('blend',+i)}else playList(key,+i);break}
+  case'pl-like':S.plLiked=S.plLiked||new Set();S.plLiked.has(v)?S.plLiked.delete(v):S.plLiked.add(v);toast(S.plLiked.has(v)?'Добавлено в коллекцию':'Убрано из коллекции');renderPl();break;
+  case'hero':if(S.playing&&S.srcKey==v){S.playing=false;drawPlayer()}else if(S.srcKey==v&&S.cur){S.playing=true;drawPlayer()}else playList(v);renderSection();break;
+  case'hero-shuffle':playList('mine',0,true);renderSection();toast('Мои треки: перемешано');break;
+  case'hero-swipe':{const sl=$('#slides');sl.scrollTo({left:sl.scrollLeft>10?0:sl.clientWidth,behavior:'smooth'});break}
+  case'mixset':mixSheet();break;
+  case'mx':{const[g,val]=r;S.mixset[g]=val;mixSheet();break}
+  case'mx-apply':closeSheet();playList('vkmix',0,true);renderSection();toast(`VK Микс: ${S.mixset.act.toLowerCase()}, ${S.mixset.mood.toLowerCase()}`);break;
+  case'blend-start':openPicker();break;
+  case'friend':startMerge(FR[+v]);break;
+  case'blend-with':closeSheet();startMerge(FR[+v]);break;
+  case'invite':closeSheet();toast('Ссылка-приглашение скопирована');break;
+  case'open-blend':S.blend=S.blends[+v];push('blend');break;
+  case'play-blend':if(!S.blend)S.blend=S.blends[0];if(top()!='blend')push('blend');else renderBlend();playList('blend',0);break;
+  case'mode':S.blend.mode=v;{const st=$('#blend').scrollTop;renderBlend();$('#blend').scrollTop=st}break;
+  case'blend-save':S.blend.saved=!S.blend.saved;toast(S.blend.saved?'Микс сохранён в Коллекцию':'Микс убран из Коллекции');{const st=$('#blend').scrollTop;renderBlend();$('#blend').scrollTop=st}break;
+  case'blend-share':shareSheet(`Вы и ${S.blend.f.s} · Микс на двоих`,`Совпадение ${S.blend.f.m}% · ${plural(blendList().length,TRW)}`);break;
+  case'blend-more':openSheet(`<h3>Вы и ${S.blend.f.s}</h3><p>Микс на двоих</p><button class="act" data-act="blend-share">${ic('send')}Отправить ${S.blend.f.g}</button><button class="act" data-act="pref:mix">${ic('bell')}${S.prefs.mix?'Выключить':'Включить'} уведомления об обновлении</button><button class="act red" data-act="blend-delete">${ic('trash-2')}Удалить микс</button>`);break;
+  case'blend-delete':closeSheet();confirmBox('Удалить микс?',`Плейлист «Вы и ${S.blend.f.s}» пропадёт у вас. У ${S.blend.f.gen} он останется.`,'Удалить',()=>{S.blends=S.blends.filter(b=>b!=S.blend);S.blend=null;S.stack=['main'];layout();renderSection();toast('Микс удалён')});break;
+  case'confirm-ok':closeSheet();confirmFn&&confirmFn();confirmFn=null;break;
+  case'optin':if(v=='yes'){S.prefs.mix=true;toast('Будем сообщать об обновлениях')}else{S.optinHidden=true;toast('Хорошо, не будем')}{const st=$('#blend').scrollTop;renderBlend();$('#blend').scrollTop=st}break;
+  case'blend-remove':S.blend.tracks=S.blend.tracks.filter(x=>x[0]!=v);closeSheet();toast('Убрали. Учтём это в следующих обновлениях');renderBlend();break;
+  case'add-blend':closeSheet();if(!S.blends.length){toast('Сначала соберите Микс на двоих');break}{const b=S.blends[0];if(!b.tracks.find(x=>x[0]==v))b.tracks.unshift([v,'me']);toast(`Добавлено в микс «Вы и ${b.f.s}»`)}break;
+  case'more':trackSheet(r[0],r[1]);break;
+  case'more-cur':S.cur&&trackSheet(S.cur.id,S.srcKey);break;
+  case'like':S.liked.has(v)?S.liked.delete(v):S.liked.add(v);closeSheet();toast(S.liked.has(v)?'Добавлено в «Мне нравится»':'Убрано из «Мне нравится»');drawPlayer();refreshLists();break;
+  case'like-cur':S.cur&&act('like:'+S.cur.id);break;
+  case'next-up':S.q.length?S.q.splice(S.qi+1,0,v):setQueue([v],0,'Очередь','queue');closeSheet();toast('Будет играть следующим');break;
+  case'where':closeSheet();closePlayer();ask(`Где звучала «${TR[v].t}»?`);break;
+  case'where-cur':S.cur&&act('where:'+S.cur.id);break;
+  case'share-t':shareSheet(TR[v].t,TR[v].a,'blue');break;
+  case'share-cur':S.cur&&shareSheet(S.cur.t,S.cur.a,'blue');break;
+  case'share':shareSheet(L[v].t,L[v].s||'Плейлист','pink');break;
+  case'sent':closeSheet();toast(v);break;
+  case'copy':closeSheet();try{navigator.clipboard.writeText('https://vk.ru/music').catch(()=>{})}catch(err){}toast('Ссылка скопирована');break;
+  case'player':openPlayer();break;
+  case'player-close':closePlayer();break;
+  case'pp':if(!S.cur)break;S.playing=!S.playing;drawPlayer();refreshLists();break;
+  case'next':step(1);break;case'prev':if(S.p>3){S.p=0;prog()}else step(-1);break;
+  case'shuffle':S.shuffle=!S.shuffle;drawPlayer();toast(S.shuffle?'Перемешивание включено':'Перемешивание выключено');break;
+  case'repeat':S.repeat=!S.repeat;drawPlayer();toast(S.repeat?'Повтор включён':'Повтор выключен');break;
+  case'queue':queueSheet();break;
+  case'qjump':S.qi=+v;S.cur=TR[S.q[S.qi]];S.p=0;S.playing=true;drawPlayer();closeSheet();refreshLists();break;
+  case'ask':ask(v);break;
+  case'hint':$('#ask').placeholder=v;$('#ask').focus();break;
+  case'photo':$('#file').click();break;
+  case'photo-sample':photoFlow(samplePhoto());break;
+  case'kscene':kscene(+v);break;
+  case'aiplay':{const[q,i]=r;setQueue(AQ[+q],+i,'Найдено ассистентом','found');toast('Играет: '+S.cur.t);break}
+  case'ai-clear':msgs.innerHTML='';$('#aiHome').style.display='';busy=false;break;
+  case'theme':S.theme=v;save('vkm-theme',v);applyTheme(true);if($('#sheet').classList.contains('on'))themeSheet();if(top()=='settings')renderSettings();toast({light:'Дневная тема',dark:'Ночная тема',system:'Тема как в системе'}[v]);break;
+  case'wave':S.wave=v;save('vkm-wave',v);renderSettings();renderSection();toast(v=='blue'?'На главной сначала VK Микс':'На главной сначала Мои треки');break;
+  case'pref':S.prefs[v]=!S.prefs[v];if(top()=='settings')renderSettings();if(top()=='blend'){closeSheet();renderBlend()}toast(S.prefs[v]?'Включено':'Выключено');break;
+  case'toast':toast(v);break;
+  case'demo':demo(v);break;
+ }
+ paint()}
+function demo(v){closeSheet();closePlayer();
+  if(v=='blend'){S.stack=['main'];S.section='home';layout();renderSection();$('#main').scrollTo({top:420,behavior:'smooth'});setTimeout(openPicker,500)}
+  else if(v=='kitchen'){openMode('ai');if(!busy){msgs.innerHTML='';$('#aiHome').style.display=''}setTimeout(()=>ask('Сериал «Кухня», 2 сезон, 3 серия: какая мелодия играла, когда разбили посуду?'),350)}
+  else if(v=='theme'){themeSheet()}
+  else if(v=='search'){openMode('search');$('#sq').value='Земф';renderSearch()}
+  else if(v=='reset'){confirmBox('Начать сначала?','Миксы, лайки и история ассистента сбросятся. Тема оформления сохранится.','Сбросить',()=>location.reload())}}
+
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;if(el.closest('#prog'))return;if(el.disabled)return;
+  if(el.id=='mini'&&e.target.closest('button'))return;e.preventDefault();act(el.dataset.act,el,e)});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'){if($('#sheet').classList.contains('on')||$('#dialog').classList.contains('on'))closeSheet();else if($('#player').classList.contains('on'))closePlayer();else back()}
+  const el=e.target.closest?.('[role=button][data-act]');if(el&&(e.key=='Enter'||e.key==' ')){e.preventDefault();act(el.dataset.act,el,e)}});
+
+/* ---------- boot ---------- */
+function fit(){const bare=innerWidth<600;document.body.classList.toggle('bare',bare);if(bare)return;const s=Math.min(1,(innerHeight-40)/844);$('#phone').style.transform=`scale(${s})`;$('#holder').style.width=390*s+'px';$('#holder').style.height=844*s+'px'}
+addEventListener('resize',fit);fit();
+$('#orb1').innerHTML=wave('mix',52,6);
+applyTheme();S.q=L.vkmix.tr.slice();S.qi=0;S.cur=TR[S.q[0]];S.p=48;S.src='VK Микс';S.srcKey='vkmix';
+renderSection();drawPlayer();layout();updBadge();paint();
+}
+</script>
+</body>
+</html>
